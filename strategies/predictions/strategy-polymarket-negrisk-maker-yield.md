@@ -166,7 +166,7 @@ Full economic model with three AS scenarios, sensitivity tables to capture-fract
 The strategy installs as two independent recipes. Install both for the full pipeline, or just the scanner for research mode.
 
 1. **Scanner** (always install). Use `workflows/negrisk-maker-yield-scanner/references/negrisk-maker-yield-scanner@latest.ts`. Schedule the recipe at `10 14 * * *` UTC. Self-bootstraps the Polymarket events table — no operator setup required.
-2. **Executor** (only for capital deployment). Use `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`. Schedule at `*/5 * * * *` UTC. Defaults to `dryRun: true` and `notionalPerQuoteUsd: 0`. Going live requires:
+2. **Executor** (only for capital deployment). Use `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`. Schedule at `*/5 * * * *` UTC. Defaults to `dryRun: true` and `notionalPerQuoteUsd: 50` (kept small even in dry-run so any accidental live promotion does not size up; reduce to $25 for first live deployment). Going live requires:
    - Edit the workflow TS to uncomment the `managePredictionOrders` block in `plan_and_quote` step (intentionally commented as a defense-in-depth)
    - Set `dryRun: false` in the recipe inputs
    - Set `notionalPerQuoteUsd` to a small first-live value (e.g. $25)
