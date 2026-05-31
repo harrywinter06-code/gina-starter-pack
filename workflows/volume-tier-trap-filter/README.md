@@ -44,7 +44,7 @@ Workflow submission with artifact at `workflows/volume-tier-trap-filter/referenc
 
 ## Capability contract
 
-- Trigger: scheduled cron (recommended `5 14 * * *` UTC, 5 minutes after the upstream surfacer recipe).
+- Trigger: recurring schedule `5 14 * * *` in `UTC` (5 minutes after the upstream surfacer recipe).
 - Inputs:
   - `limit` (default 100)
   - `feeBufferBp` (default 50)

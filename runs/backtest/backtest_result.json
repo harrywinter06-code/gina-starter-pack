@@ -1,0 +1,218 @@
+{
+  "france": {
+    "name": "france",
+    "tick": 0.001,
+    "span_days": 5.97,
+    "n_trades": 3665,
+    "quotes_posted": 2798,
+    "optimistic": {
+      "n_fills": 1050,
+      "fill_rate": 0.3753,
+      "h300": {
+        "filled_notional": 15357.44,
+        "rebate_usd": 28.7952,
+        "spread_capture_usd": 45.2919,
+        "adverse_selection_usd": 3.4122,
+        "net_usd": 70.6749,
+        "net_bp_per_filled_dollar": 46.02,
+        "fills_net_positive": 892,
+        "fills_net_negative": 29,
+        "net_per_day_usd": 11.8332
+      },
+      "h1800": {
+        "filled_notional": 14818.48,
+        "rebate_usd": 27.7846,
+        "spread_capture_usd": 43.6964,
+        "adverse_selection_usd": 7.4193,
+        "net_usd": 64.0618,
+        "net_bp_per_filled_dollar": 43.231,
+        "fills_net_positive": 828,
+        "fills_net_negative": 65,
+        "net_per_day_usd": 10.726
+      },
+      "h7200": {
+        "filled_notional": 13833.98,
+        "rebate_usd": 25.9387,
+        "spread_capture_usd": 40.7822,
+        "adverse_selection_usd": 18.6424,
+        "net_usd": 48.0786,
+        "net_bp_per_filled_dollar": 34.754,
+        "fills_net_positive": 694,
+        "fills_net_negative": 142,
+        "net_per_day_usd": 8.0499
+      }
+    },
+    "sweep": {
+      "n_fills": 25,
+      "fill_rate": 0.0089,
+      "h300": {
+        "filled_notional": 488.76,
+        "rebate_usd": 0.9164,
+        "spread_capture_usd": 1.4087,
+        "adverse_selection_usd": 3.0204,
+        "net_usd": -0.6953,
+        "net_bp_per_filled_dollar": -14.225,
+        "fills_net_positive": 3,
+        "fills_net_negative": 21,
+        "net_per_day_usd": -0.1164
+      },
+      "h1800": {
+        "filled_notional": 418.76,
+        "rebate_usd": 0.7852,
+        "spread_capture_usd": 1.2026,
+        "adverse_selection_usd": 4.0027,
+        "net_usd": -2.0149,
+        "net_bp_per_filled_dollar": -48.116,
+        "fills_net_positive": 3,
+        "fills_net_negative": 18,
+        "net_per_day_usd": -0.3374
+      },
+      "h7200": {
+        "filled_notional": 423.76,
+        "rebate_usd": 0.7946,
+        "spread_capture_usd": 1.2088,
+        "adverse_selection_usd": 3.9947,
+        "net_usd": -1.9914,
+        "net_bp_per_filled_dollar": -46.992,
+        "fills_net_positive": 4,
+        "fills_net_negative": 17,
+        "net_per_day_usd": -0.3334
+      }
+    }
+  },
+  "spain": {
+    "name": "spain",
+    "tick": 0.001,
+    "span_days": 5.45,
+    "n_trades": 3469,
+    "quotes_posted": 2536,
+    "optimistic": {
+      "n_fills": 909,
+      "fill_rate": 0.3584,
+      "h300": {
+        "filled_notional": 11849.35,
+        "rebate_usd": 22.2175,
+        "spread_capture_usd": 34.732,
+        "adverse_selection_usd": 0.9339,
+        "net_usd": 56.0156,
+        "net_bp_per_filled_dollar": 47.273,
+        "fills_net_positive": 794,
+        "fills_net_negative": 7,
+        "net_per_day_usd": 10.2743
+      },
+      "h1800": {
+        "filled_notional": 11653.97,
+        "rebate_usd": 21.8512,
+        "spread_capture_usd": 34.1775,
+        "adverse_selection_usd": 2.3594,
+        "net_usd": 53.6693,
+        "net_bp_per_filled_dollar": 46.052,
+        "fills_net_positive": 759,
+        "fills_net_negative": 21,
+        "net_per_day_usd": 9.844
+      },
+      "h7200": {
+        "filled_notional": 10463.78,
+        "rebate_usd": 19.6196,
+        "spread_capture_usd": 30.6861,
+        "adverse_selection_usd": 5.1453,
+        "net_usd": 45.1604,
+        "net_bp_per_filled_dollar": 43.159,
+        "fills_net_positive": 662,
+        "fills_net_negative": 63,
+        "net_per_day_usd": 8.2833
+      }
+    },
+    "sweep": {
+      "n_fills": 6,
+      "fill_rate": 0.0024,
+      "h300": {
+        "filled_notional": 84.99,
+        "rebate_usd": 0.1594,
+        "spread_capture_usd": 0.2492,
+        "adverse_selection_usd": 0.3793,
+        "net_usd": 0.0292,
+        "net_bp_per_filled_dollar": 3.44,
+        "fills_net_positive": 1,
+        "fills_net_negative": 4,
+        "net_per_day_usd": 0.0054
+      },
+      "h1800": {
+        "filled_notional": 76.6,
+        "rebate_usd": 0.1436,
+        "spread_capture_usd": 0.2254,
+        "adverse_selection_usd": 0.3639,
+        "net_usd": 0.0052,
+        "net_bp_per_filled_dollar": 0.674,
+        "fills_net_positive": 1,
+        "fills_net_negative": 4,
+        "net_per_day_usd": 0.0009
+      },
+      "h7200": {
+        "filled_notional": 51.6,
+        "rebate_usd": 0.0968,
+        "spread_capture_usd": 0.1532,
+        "adverse_selection_usd": 0.2194,
+        "net_usd": 0.0306,
+        "net_bp_per_filled_dollar": 5.92,
+        "fills_net_positive": 1,
+        "fills_net_negative": 3,
+        "net_per_day_usd": 0.0056
+      }
+    }
+  },
+  "basket_france_plus_spain": {
+    "optimistic": {
+      "h300": {
+        "filled_notional": 27206.79,
+        "rebate_usd": 51.0127,
+        "adverse_selection_usd": 4.3461,
+        "net_usd": 126.6905,
+        "net_bp_per_filled_dollar": 46.566,
+        "net_per_day_usd": 21.2212
+      },
+      "h1800": {
+        "filled_notional": 26472.45,
+        "rebate_usd": 49.6358,
+        "adverse_selection_usd": 9.7787,
+        "net_usd": 117.7311,
+        "net_bp_per_filled_dollar": 44.473,
+        "net_per_day_usd": 19.7205
+      },
+      "h7200": {
+        "filled_notional": 24297.76,
+        "rebate_usd": 45.5583,
+        "adverse_selection_usd": 23.7877,
+        "net_usd": 93.239,
+        "net_bp_per_filled_dollar": 38.373,
+        "net_per_day_usd": 15.6179
+      }
+    },
+    "sweep": {
+      "h300": {
+        "filled_notional": 573.75,
+        "rebate_usd": 1.0758,
+        "adverse_selection_usd": 3.3997,
+        "net_usd": -0.6661,
+        "net_bp_per_filled_dollar": -11.61,
+        "net_per_day_usd": -0.1116
+      },
+      "h1800": {
+        "filled_notional": 495.36,
+        "rebate_usd": 0.9288,
+        "adverse_selection_usd": 4.3666,
+        "net_usd": -2.0097,
+        "net_bp_per_filled_dollar": -40.57,
+        "net_per_day_usd": -0.3366
+      },
+      "h7200": {
+        "filled_notional": 475.36,
+        "rebate_usd": 0.8914,
+        "adverse_selection_usd": 4.2141,
+        "net_usd": -1.9608,
+        "net_bp_per_filled_dollar": -41.249,
+        "net_per_day_usd": -0.3284
+      }
+    }
+  }
+}

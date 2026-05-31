@@ -47,7 +47,7 @@ Workflow submission with artifact at `workflows/negrisk-event-arbitrage-surfacer
 
 ## Capability contract
 
-- Trigger: scheduled cron (recommended `0 14 * * *` UTC).
+- Trigger: recurring schedule `0 14 * * *` in `UTC`.
 - Inputs:
   - `limit` (default 100)
   - `feeBufferBp` (default 50)

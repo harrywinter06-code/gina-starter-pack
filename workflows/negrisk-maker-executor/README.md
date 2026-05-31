@@ -52,7 +52,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-executor/reference
 
 ## Capability contract
 
-- Trigger: scheduled cron (recommended `*/5 * * * *` UTC) for responsive lifecycle tracking; opportunistic trigger when signal KV is updated also supported.
+- Trigger: recurring schedule `*/5 * * * *` in `UTC` for responsive lifecycle tracking; opportunistic trigger when signal KV is updated also supported.
 - Inputs:
   - `signalKeyArb` (default `"negrisk:latest_classified"`)
   - `signalKeyTier` (default `"voltier:latest_surfaced"`)

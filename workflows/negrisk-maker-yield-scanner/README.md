@@ -47,7 +47,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-scanner/refe
 
 ## Capability contract
 
-- Trigger: scheduled cron (recommended `10 14 * * *` UTC, 10 min after Pack 1 layers).
+- Trigger: recurring schedule `10 14 * * *` in `UTC` (10 min after Pack 1 layers).
 - Inputs:
   - `limit` (default 500)
   - `minMeanPrice` (default 0.15) — structural floor from WORLD_CUP_MM.md §82-91

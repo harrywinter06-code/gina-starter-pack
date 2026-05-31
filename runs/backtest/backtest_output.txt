@@ -1,0 +1,35 @@
+==============================================================================
+MEASURED-FILL MAKER-YIELD BACKTEST  (real Polymarket CLOB trade tape)
+==============================================================================
+
+## FRANCE  span=5.97d  trades=3665  tick=0.001  quotes_posted=2798
+  [optimistic] fills=1050  fill_rate=37.5%
+      mk@  5m: filled=$ 15357  rebate=$ 28.80  AS=$   3.41  NET=$  70.67 ( +46.0bp/$)  +/-:892/29  net/day=$11.83
+      mk@ 30m: filled=$ 14818  rebate=$ 27.78  AS=$   7.42  NET=$  64.06 ( +43.2bp/$)  +/-:828/65  net/day=$10.73
+      mk@120m: filled=$ 13834  rebate=$ 25.94  AS=$  18.64  NET=$  48.08 ( +34.8bp/$)  +/-:694/142  net/day=$8.05
+  [sweep     ] fills=  25  fill_rate=0.9%
+      mk@  5m: filled=$   489  rebate=$  0.92  AS=$   3.02  NET=$  -0.70 ( -14.2bp/$)  +/-:3/21  net/day=$-0.12
+      mk@ 30m: filled=$   419  rebate=$  0.79  AS=$   4.00  NET=$  -2.01 ( -48.1bp/$)  +/-:3/18  net/day=$-0.34
+      mk@120m: filled=$   424  rebate=$  0.79  AS=$   3.99  NET=$  -1.99 ( -47.0bp/$)  +/-:4/17  net/day=$-0.33
+
+## SPAIN  span=5.45d  trades=3469  tick=0.001  quotes_posted=2536
+  [optimistic] fills= 909  fill_rate=35.8%
+      mk@  5m: filled=$ 11849  rebate=$ 22.22  AS=$   0.93  NET=$  56.02 ( +47.3bp/$)  +/-:794/7  net/day=$10.27
+      mk@ 30m: filled=$ 11654  rebate=$ 21.85  AS=$   2.36  NET=$  53.67 ( +46.1bp/$)  +/-:759/21  net/day=$9.84
+      mk@120m: filled=$ 10464  rebate=$ 19.62  AS=$   5.15  NET=$  45.16 ( +43.2bp/$)  +/-:662/63  net/day=$8.28
+  [sweep     ] fills=   6  fill_rate=0.2%
+      mk@  5m: filled=$    85  rebate=$  0.16  AS=$   0.38  NET=$   0.03 (  +3.4bp/$)  +/-:1/4  net/day=$0.01
+      mk@ 30m: filled=$    77  rebate=$  0.14  AS=$   0.36  NET=$   0.01 (  +0.7bp/$)  +/-:1/4  net/day=$0.00
+      mk@120m: filled=$    52  rebate=$  0.10  AS=$   0.22  NET=$   0.03 (  +5.9bp/$)  +/-:1/3  net/day=$0.01
+
+## BASKET (France+Spain)
+  [optimistic]
+      mk@  5m: filled=$ 27207  rebate=$ 51.01  AS=$   4.35  NET=$ 126.69 ( +46.6bp/$)  net/day=$21.22
+      mk@ 30m: filled=$ 26472  rebate=$ 49.64  AS=$   9.78  NET=$ 117.73 ( +44.5bp/$)  net/day=$19.72
+      mk@120m: filled=$ 24298  rebate=$ 45.56  AS=$  23.79  NET=$  93.24 ( +38.4bp/$)  net/day=$15.62
+  [sweep]
+      mk@  5m: filled=$   574  rebate=$  1.08  AS=$   3.40  NET=$  -0.67 ( -11.6bp/$)  net/day=$-0.11
+      mk@ 30m: filled=$   495  rebate=$  0.93  AS=$   4.37  NET=$  -2.01 ( -40.6bp/$)  net/day=$-0.34
+      mk@120m: filled=$   475  rebate=$  0.89  AS=$   4.21  NET=$  -1.96 ( -41.2bp/$)  net/day=$-0.33
+
+[falsifier] net = rebate + markout, no flooring. rebate ceiling +18.75 bp/$; sweep model isolates queue-adverse fills -> if NET<0 there the edge is benign-fill-only.

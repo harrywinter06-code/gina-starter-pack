@@ -1,11 +1,11 @@
 # gina-starter-pack
 
-Two complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format exactly. Each strategy is independently installable; PR-ready into `awesome-gina` with zero schema translation.
+Two complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format. All 12 primitives pass `awesome-gina`'s CI metadata gate (`scripts/validate_primitives.rb`) in a merged tree, and all 5 workflows validate in Gina's live runtime — see [`runs/CONFORMANCE.md`](runs/CONFORMANCE.md) for the diff and the one fix that was required (workflow READMEs needed the canonical `/create`-compatible schedule line).
 
 | pack | strategy | action | trigger | annualised banded estimate |
 |---|---|---|---|---|
 | Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K mid-cap |
-| Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **+100 to +200% APR** on ~$250–500 standing notional (capacity-constrained — see PROFITABILITY_ANALYSIS_MAKER_YIELD.md) |
+| Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **sim:** +100–200% APR on $250–500 (small-base artifact). **Measured** (real CLOB tape, [`runs/backtest/`](runs/backtest/MEASURED_BACKTEST.md)): small-positive ~$100s–$1k/yr, capacity-bound, queue-adverse tail negative → **scope-down** |
 
 Both packs are sourced from the same polymarket-edge research repo. They operate at different capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional. **Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; capacity bottlenecks dominate at larger notional.** Combined deployment yields ~$2K–$21K/year with Pack 1 carrying the majority and Pack 2 adding continuous baseline.
 

@@ -52,7 +52,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
 
 ## Capability contract
 
-- Trigger: scheduled cron (recommended `*/5 * * * *` UTC for responsive quote refresh).
+- Trigger: recurring schedule `*/5 * * * *` in `UTC` for responsive quote refresh.
 - Inputs:
   - `signalKey` (default `"makeryld:eligible_constituents"`)
   - `notionalPerQuoteUsd` (default 50)

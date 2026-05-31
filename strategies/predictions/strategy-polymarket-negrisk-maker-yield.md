@@ -141,7 +141,9 @@ flowchart TD
 
 ## Expected economics
 
-Build-day live observation (verified by workflow runs — TODO: backfill run IDs after Phase C live verification).
+Live-verified in Gina's runtime (2026-05-31): scanner `run_mpttawax1t17ar`, executor `run_mpttggw2dy9yh7`; pricing/settlement correctness re-verified at SHA `8adbd73e` (`run_mptv77snkgoqdn` / `run_mptv7vn2ijhfyq` / `run_mptv81dv5ecoc0`).
+
+**Measured-fill reconciliation (load-bearing):** the per-day figures in the table below are **sim-derived** — the scanner's own `captureFraction × spread` model, never realised. A measured backtest against the real Polymarket CLOB trade tape (replacing `captureFraction` with counted real-tape crossings and measured post-fill mid drift) is in [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md). It finds: (a) on the **2 live-eligible** names (France, Spain — not the headline 5), measured adverse selection is **small** (1–24 bp/\$, below the rebate+half-spread buffer), so the favourites filter is vindicated; (b) the sign of net P&L is governed by **queue position**, not AS — at the doc default `captureFraction=0.05` measured net is **~$1/day / ~$387/yr** on ~$200 standing, and the queue-adverse tail is net-negative; (c) the **+100–200% APR headline is a small-base artifact** — the honest figure is the absolute few-hundred-$/year, capacity-bound. Treat the table below as sim-only.
 
 **Critical distinction:** at moderate AS, the strategy is knife-edge per `WORLD_CUP_MM.md`. The eligibility filter shifts the per-constituent set to the structurally-positive subset; the BASKET P&L improves because the long tail is removed.
 
@@ -202,7 +204,8 @@ The strategy installs as two independent recipes. Install both for the full pipe
 
 ## Evidence
 
-- Verified plug-and-play runs in Gina's actual workflow runtime: TODO — backfill after Phase C live verification
+- Verified plug-and-play runs in Gina's actual workflow runtime: scanner `run_mpttawax1t17ar`, executor `run_mpttggw2dy9yh7` (2026-05-31); SHA `8adbd73e` settlement/kill-switch runs `run_mptv7vn2ijhfyq` / `run_mptv81dv5ecoc0`.
+- **Measured-fill backtest (replaces the sim `captureFraction`):** [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md) — real CLOB trade tape, France+Spain; measured net small-positive-but-capacity-bound, queue-adverse tail negative, APR headline is a small-base artifact.
 - Adversarial test pass: [`runs/TEST_RESULTS_MAKER_YIELD.md`](../../runs/TEST_RESULTS_MAKER_YIELD.md) — seven test passes documented
 - Profitability analysis: [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md) — full per-cycle P&L model, three AS scenarios, honest banded annualised estimate
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) — `WORLD_CUP_MM.md`, `polymarket_mm_sim.py`, `REDTEAM.md` §8a

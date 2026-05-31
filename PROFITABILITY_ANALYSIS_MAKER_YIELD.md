@@ -8,6 +8,16 @@ Pack 2 ports the maker-rebate yield analysis from polymarket-edge `WORLD_CUP_MM.
 
 **Honest framing on APR percentage**: Pack 2 produces absolute-dollar yield in the **$100–3,000/year range on $250–500 standing maker notional**, depending on `captureFraction` realisation and constituent flow. The APR-percentage figures cited below (100–200% banded, 657% best-case) are arithmetic consequences of dividing modest absolute returns by a small standing-notional base — they are not a deploy-at-scale opportunity. Pack 2 is structurally a small-capital high-turnover-yield strategy; the meaningful planning figure is the absolute dollar range, not the APR percentage.
 
+> ## ⚠ Measured-fill reconciliation (added after the sim — read this first)
+>
+> **Every number below this box is sim-derived**: the scanner's own `captureFraction × spread` model, never realised against fills. A measured backtest now replaces `captureFraction` with counted crossings of the strategy's actual posted quotes against the **real Polymarket CLOB trade tape** for the live-eligible constituents, plus measured post-fill mid drift for adverse selection. Full method, falsifier, and code: [`runs/backtest/MEASURED_BACKTEST.md`](runs/backtest/MEASURED_BACKTEST.md).
+>
+> Measured findings (France + Spain, ~6-day tape, 2026-05):
+> - **Net per filled dollar is robustly positive** (+38 to +47 bp/\$ optimistic-fill across 5–120 min markout) and **measured adverse selection is small** (1–24 bp/\$) — well under the ~47 bp rebate (18.75 bp) + structural half-spread (≈27 bp on a 1-tick 17¢ book) buffer. The fear that AS dominates the favourites maker is **not** borne out; the mean-price≥0.15 filter is vindicated.
+> - **The sign of net P&L is governed by queue position, not AS** — i.e. `captureFraction` re-expressed. Under a queue-adverse "sweep" fill model (fills only when the level breaks through us), net is **negative** (−12 to −41 bp/\$). The strategy only *joins* the touch (no price improvement), so realistic capture sits below the optimistic bound.
+> - At the doc default `captureFraction = 0.05`, measured net ≈ **$1.06/day → ~$387/yr** on the ~$200 standing notional of the **2 names that actually clear live** (not the headline 5). This is inside the "$100–3,000/yr" range stated above; **the +100–200% APR figure survives only as a small-base artifact** on trivial absolute dollars.
+> - **Verdict: scope-down.** Real but small, capacity-bound, sign-sensitive to an unmeasured queue assumption. Honest headline = the absolute few-hundred-\$/year, **not** the APR percentage. Do not allocate material capital on the APR.
+
 ### Critical distinction: full basket vs eligibility-filtered basket
 
 `WORLD_CUP_MM.md` analysed the full 48-market World Cup basket and found:
