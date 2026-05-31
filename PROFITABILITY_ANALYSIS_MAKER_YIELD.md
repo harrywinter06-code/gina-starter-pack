@@ -34,6 +34,8 @@ Pack 2's eligibility filter (mean_price ≥ 0.15 AND quote_half_spread_fraction 
 
 The filter shifts the basket's economic profile from "knife-edge with massive informed-AS tail risk" to "+$4,503 moderate-AS 50-day projection with bounded downside via kill-switch."
 
+> **Live-data caveat (2026-05-31 verification).** The "top-5 / 5 of 5" basket above is the WORLD_CUP_MM.md methodological subset (France, Spain, England, Argentina, Brazil) and the projection numbers are unchanged from that methodology. When the scanner was run **live** on 2026-05-31 (run `run_mpttawax1t17ar`), only **2** of those five — France and Spain — actually cleared the eligibility filter on that day's order book. The binding constraint was the `mean_price ≥ 0.15` floor, not the spread: England/Argentina/Brazil were priced at 0.086–0.113 (below 0.15) on the day, so they failed the price floor regardless of spread. The 50-day projection figures here are therefore a *methodological* basket projection, **not** a claim that five constituents are eligible on any given day. On a typical day the live eligible set may be 2–5 constituents depending on how many favourites sit above the 15¢ floor; size expectations accordingly. The economics scale roughly linearly in the number of eligible constituents, so a 2-constituent live basket implies ~2/5 of the tabulated basket figures.
+
 **Critical capacity caveat:** WORLD_CUP_MM.md's per-day rates are based on capturing `captureFraction = 0.5` of observed trade flow — being the SOLE maker on each market. Pack 2 defaults to `captureFraction = 0.05` (10x more conservative) because (a) the workflow runtime cannot validate higher rates without historical trade data, and (b) real maker queues are competitive. Pack 2's expected per-day net is therefore **~$9/d** (= $90/d × 0.1), not $90/d.
 
 ### Headline planning figure
@@ -53,8 +55,8 @@ The filter shifts the basket's economic profile from "knife-edge with massive in
 ## The trade — mechanically
 
 A maker on a Polymarket negRisk constituent posts **two-sided limit orders** inside the bid-ask spread:
-- BUY limit at `bestAsk − 5 bp`
-- SELL limit at `bestBid + 5 bp`
+- BUY limit at `bestBid + 5 bp` (improving the bid; snapped to the market tick and clamped so it never reaches bestAsk)
+- SELL limit at `bestAsk − 5 bp` (improving the ask; snapped to the market tick and clamped so it never reaches bestBid)
 
 When a counterparty crosses to either side, the maker captures the rebate (18.75 bp of notional) and inherits a (potentially adverse) position equal to the filled side. The maker's net P&L per fill is:
 

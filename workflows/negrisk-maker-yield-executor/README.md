@@ -3,7 +3,7 @@ id: negrisk-maker-yield-executor
 slug: negrisk-maker-yield-executor
 name: NegRisk Maker Yield Executor Workflow
 type: workflow
-summary: Consume the eligibility list from the maker-yield scanner KV, plan per-constituent maker limit-order intents at bestBid + 5bp / bestAsk - 5bp under risk caps, optionally submit them, and settle estimated rebate-net-of-AS P&L per cycle.
+summary: Consume the eligibility list from the maker-yield scanner KV, plan per-constituent two-sided maker limit-order intents at bestBid + 5bp (buy) / bestAsk - 5bp (sell), tick-rounded and maker-only, under risk caps, optionally submit them, and settle estimated rebate-net-of-AS P&L per cycle.
 category: workflows/predictions
 status: experimental
 owner: harrywinter06-code
@@ -43,7 +43,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
 
 - Reads eligible constituents from `makeryld:eligible_constituents` KV (produced by the scanner workflow).
 - Applies a risk gate: max-open-quotes, max-daily-notional, max-daily-loss with auto-tripping kill-switch.
-- For each allowed constituent, refreshes the orderbook and computes two-sided maker quote intents at `bestBid + 5bp` (sell side) and `bestAsk − 5bp` (buy side).
+- For each allowed constituent, refreshes the orderbook and computes two-sided maker quote intents at `bestBid + 5bp` (buy side) and `bestAsk − 5bp` (sell side), snapped to the market tick grid and clamped maker-only (the buy never reaches bestAsk, the sell never reaches bestBid).
 - In `dryRun: true` mode (default), persists the quote intent as a reviewable proof without submission.
 - In `dryRun: false` mode (operator-armed), submits both buy and sell limit orders via `managePredictionOrders` (production submission lines are intentionally stubbed in the as-shipped workflow — see Setup #5).
 - Monitors open quotes every tick: re-queries each constituent's orderbook, checks whether the current bestAsk/bestBid has crossed our limit, estimates rebate net of moderate-AS cost (capped at half-spread × scenario fraction).
@@ -86,7 +86,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
 1. **load_state** — Read daily P&L gross, daily notional used, kill-switch state, and current open quotes from KV; surface aggregate state for downstream steps.
 2. **evaluate_eligibility** — Read `makeryld:eligible_constituents` from KV; identify constituents not already quoting; persist candidates to `makeryld:last_candidates` KV + file for risk_gate consumption.
 3. **risk_gate** — Apply caps (kill-switch, daily-loss, max-open-quotes, max-daily-notional); produce `allowed` and `blocks` lists; auto-trip kill-switch on daily-loss-cap breach.
-4. **plan_and_quote** — For each allowed candidate, fetch fresh orderbook via `getPredictionOrderbook`, compute two-sided maker limit intents (`bestBid + 5bp` sell, `bestAsk − 5bp` buy), persist intents to KV as dry-run proof OR (when `dryRun: false`) submit via `managePredictionOrders` (production path intentionally stubbed).
+4. **plan_and_quote** — For each allowed candidate, fetch fresh orderbook via `getPredictionOrderbook`, infer the market tick from the price grid, compute two-sided maker limit intents (`bestBid + 5bp` buy, `bestAsk − 5bp` sell) snapped to tick and clamped maker-only/non-crossing, persist intents to KV as dry-run proof OR (when `dryRun: false`) submit via `managePredictionOrders` (production path intentionally stubbed).
 5. **monitor_and_settle** — Iterate all open quotes, refresh per-constituent orderbook, check fills (orderbook crossed our limit), estimate per-cycle rebate net of AS, aggregate daily P&L gross into `makeryld:daily_pnl:<date>`.
 
 ## Execution diagram

@@ -182,7 +182,7 @@ France (yes_token …842092): mid 0.1705, allocated $50 → buy $25 @ 0.1705 + s
 Spain  (yes_token …308080): mid 0.1685, allocated $50 → buy $25 @ 0.1685 + sell $25 @ 0.1685
 ```
 
-`makeryld_summary.md`: `Settled this cycle: 0 · Today P&L: $0.0000` — correct: at a 1-tick-wide book the 5bp offset collapses both sides to the mid (buy at bestAsk−5bp, sell at bestBid+5bp both ≈ mid), so the just-posted limits are not crossed by the current book within the same cycle, hence zero hypothetical fills. The risk-gate, two-sided quote planning, KV persistence, and settlement loop all executed correctly in dryRun.
+`makeryld_summary.md`: `Settled this cycle: 0 · Today P&L: $0.0000`. The risk-gate, two-sided quote planning, and KV persistence executed in dryRun, but with zero fills the `monitor_and_settle` **fill-accounting branch did not run** in this cycle — so this run did NOT yet exercise the AS-cost / daily-P&L / kill-switch path. Two further problems surfaced on later inspection and are documented in **Pass 10 below**: (1) at a 1-tick book the 5bp offset placed both orders at the same mid price (0.1705) — and that price is sub-tick (Polymarket ticks in 0.001), so the planned quotes were not actually placeable; (2) the buy/sell offset sides were inverted, which would self-cross on any book wider than one tick. Both are fixed (Bug 7), and the settlement / kill-switch paths are exercised at runtime in Pass 10. **This run (`run_mpttggw2dy9yh7`) is superseded for the executor by the Pass 10 runs on the corrected artifact (SHA `8adbd73e`).**
 
 Two-command install (`validate` → `run`) works end-to-end with zero operator-side setup, matching Pack 1's plug-and-play standard.
 
@@ -431,8 +431,9 @@ Validation scripts: `/tmp/ts-validate/validate.mjs` (TypeScript parse), `/tmp/te
 | 3. TypeScript parse | Pattern-equivalent to Pack 1's verified files | ✅ Inferred from pattern equivalence; recommended for operator re-validation |
 | 4. Live runtime structural | `workflow validate` in Gina's actual runtime | ✅ VERIFIED LIVE — scanner steps:3, executor steps:5 |
 | 5. Live end-to-end with real signal | Pipeline produces classified output | ✅ VERIFIED LIVE — run_mpttawax1t17ar; 2 eligible (France, Spain); price-floor is binding constraint |
-| 6. Plug-and-play self-bootstrap | Zero-setup install | ✅ VERIFIED LIVE — executor run_mpttggw2dy9yh7; inherits Pack 1's verified pattern |
+| 6. Plug-and-play self-bootstrap | Zero-setup install | ✅ VERIFIED LIVE — executor run_mpttggw2dy9yh7 (pricing later corrected; see Pass 10); inherits Pack 1's verified pattern |
 | 7. Pre-send adversarial sweep | Bypass attempts on the trade-capable executor | ✅ 1 design clarification + 1 bug fix documented |
+| **10. Post-live tick/side fix + settlement runtime exercise** | **Maker-price correctness + the previously-unexercised settlement/AS/kill-switch path** | **✅ 1 CRITICAL bug fixed (sub-tick price + inverted sides); 21,231-case fuzz passes; settlement + kill-switch exercised live at SHA `8adbd73e`** |
 
 ## Honest scope summary
 
@@ -443,3 +444,44 @@ Validation scripts: `/tmp/ts-validate/validate.mjs` (TypeScript parse), `/tmp/te
 - **Defense-in-depth on the executor's trade path**: identical to Pack 1 (dryRun hardcoded, submission lines commented, kill-switch on daily-loss-cap).
 
 **Pack 2's verification depth matches Pack 1's at the structural / methodological / adversarial AND live-runtime layers. Live-runtime depth is now completed-in-session (2026-05-31): both workflows validated and ran clean against live data, run IDs `run_mpttawax1t17ar` / `run_mpttggw2dy9yh7`. The honest residual caveat is that the executor ran dryRun and the per-day economic figures are sim-derived, never externally realized — the live test validates execution correctness and filter behaviour, not the WORLD_CUP_MM yield numbers.**
+
+---
+
+## Pass 10 — Post-live tick/side correctness fix + settlement runtime exercise (2026-05-31)
+
+Triggered by a self-critique after the Pass 4–6 live runs: the executor was stamped "VERIFIED LIVE" but (a) the dryRun cycle settled zero fills, so the economically load-bearing `monitor_and_settle` accounting branch had **never actually executed at runtime** (only in the Pass 9 Python simulation), and (b) inspecting the planned quotes revealed a real pricing defect. Both are now resolved on the corrected artifact, executor SHA `8adbd73e` (scanner unchanged).
+
+### Bug 7 (CRITICAL, FIXED) — sub-tick maker prices + inverted buy/sell sides
+
+**Threat.** `plan_and_quote` computed `buyLimit = bestAsk − offset` and `sellLimit = bestBid + offset` with `offset = 5bp = 0.0005`, then `Number(buyLimit.toFixed(4))`. Two defects, both masked by the 1-tick-wide live World Cup book:
+
+1. **Sub-tick prices.** Polymarket ticks in 0.001. On France (bestBid 0.170 / bestAsk 0.171) the formula produced 0.1705 — a half-tick, which the venue cannot accept. The Pass 4–6 dryRun "preview" was previewing orders that would be rejected live.
+2. **Inverted sides.** Buy was placed near the *ask* and sell near the *bid*. On any book wider than one tick this yields `buyLimit > sellLimit` — the maker's own two quotes cross each other (a locked/crossed self-quote). The 1-tick book hid it by collapsing both sides onto the mid (both orders printed at 0.1705).
+
+**Bypass demonstration (runnable, executed in-sandbox via `ts-exec`).** A fuzz harness mirrored the exact pricing logic and asserted four invariants — on-tick-grid, maker-only (`buy < bestAsk`, `sell > bestBid`), non-collapse/non-cross (`buy < sell`), and in-domain — across an exhaustive sweep (tick ∈ {0.001, 0.01} × spread 1–15 ticks × every valid bid position) plus 5,000 float-noise books. The **first** version of the fix (improve-from-touch + tick rounding + maker-only clamps) still failed on **2-tick-wide books**: the single inside tick plus float rounding of the half-tick offset pulled both improved prices onto the same mid tick (e.g. bestBid 0.041 / bestAsk 0.043 → both 0.042 → collapse). This was caught by the fuzz harness, not by inspection.
+
+**Fix.** Improve from the correct side (`buy = bestBid + offset`, `sell = bestAsk − offset`), snap to a tick inferred from the live orderbook price grid (`getPredictionOrderbook` returns full `bids`/`asks` levels), clamp maker-only (`buy ≤ bestAsk − tick`, `sell ≥ bestBid + tick`), and add a narrow-spread retreat guard: if `buyLimit ≥ sellLimit` after rounding, retreat both sides to the touch (join `bestBid` / `bestAsk`), which is always valid, always maker, and strictly `buy < sell` since the book is ≥ 1 tick wide.
+
+**Second-pass red-team (the strengthened fix).** Re-ran the fuzz with the retreat guard, exhaustive sweep widened to spreads 1–15 ticks + 5,000 noise books: **21,231 cases, 0 failures** — all four invariants hold. Then verified live in Gina's runtime (executor `run_mptv77snkgoqdn`, SHA `8adbd73e`): France now plans **buy 0.170 / sell 0.171** and Spain **buy 0.168 / sell 0.169** — distinct, on-grid, maker-only. The mid-collapse is gone.
+
+The `.ts` `description` field and both prose docs (executor README, `PROFITABILITY_ANALYSIS_MAKER_YIELD.md`) carried the inverted side labelling and were corrected to match.
+
+### Settlement / AS-cost / kill-switch — exercised at runtime (previously sim-only)
+
+Because a stable live book never crosses a just-posted maker quote within one cycle, the settlement branch cannot be reached by a normal run. To exercise it without waiting for real fills, synthetic crossed-book quotes were injected into KV (in the workflow's stringified-JSON format — note `kv set` from the CLI stores structured JSON, which `monitor_and_settle`'s `JSON.parse(entry.value)` skips; injection via `ts-exec` `kv.set(key, JSON.stringify(...))` matches the workflow's own write format) and the real executor was run.
+
+**Settlement run (`run_mptv7vn2ijhfyq`, 0 failed steps), `Settled this cycle: 2`:**
+
+| synthetic quote | book | rebate | AS cost | net | check |
+|---|---|---|---|---|---|
+| SYNTH-france-fill-pos | tight (0.293% half-spread) | $0.0938 | $0.0733 | **+$0.0204** | rebate-dominant → positive |
+| SYNTH-turkiye-fill-neg | wide (6.67% half-spread) | $0.0938 | $1.6667 | **−$1.5729** | AS-dominant → negative |
+| **aggregated daily P&L** | | | | **−$1.5525** | sum, correctly negative |
+
+The AS-cost cap reproduces `size × (halfSpread/mid) × asScenarioFraction` against the live spread on both markets (Türkiye AS/side $0.833 ⇒ halfSpread/mid = 6.67%; France ⇒ 0.293%), with correct sign in both directions and finite aggregation — the full `monitor_and_settle` accounting branch executed in Gina's runtime, not just in the Pass 9 simulator.
+
+**Kill-switch run (`run_mptv81dv5ecoc0`, 0 failed steps):** with `daily_pnl` seeded to −$60 (below the −$50 cap), `risk_gate` blocked all quoting (`blocks: [{ reason: "daily_loss_cap_exceeded", daily_pnl_usd: -60 }]`) and persisted `kill_switch_state: tripped`. Synthetic test state was deleted afterward; the sandbox KV holds only scan outputs and the kill switch is reset to `armed`.
+
+### Verdict
+
+The executor's pricing is now correct and on-grid (21,231-case fuzz + live confirmation), and its settlement/AS/kill-switch path is exercised at runtime rather than only in simulation. The standing honest caveat is unchanged: all runs are dryRun and the per-day economic figures remain sim-derived — Pass 10 hardens execution correctness, not the WORLD_CUP_MM yield numbers.
