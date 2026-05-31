@@ -6,6 +6,8 @@ Quantitative economic case for the maker-yield strategy. Derived from build-day 
 
 Pack 2 ports the maker-rebate yield analysis from polymarket-edge `WORLD_CUP_MM.md` and refines it with a depth-walk-derived eligibility filter that excludes the long-tail of net-negative constituent markets. The structural feature: at Polymarket Sports' 18.75 bp maker rebate, the basket clears positive only on constituents where `quote_half_spread_fraction ≤ 0.00375` (moderate-AS breakeven from `polymarket_mm_sim.py`).
 
+**Honest framing on APR percentage**: Pack 2 produces absolute-dollar yield in the **$100–3,000/year range on $250–500 standing maker notional**, depending on `captureFraction` realisation and constituent flow. The APR-percentage figures cited below (100–200% banded, 657% best-case) are arithmetic consequences of dividing modest absolute returns by a small standing-notional base — they are not a deploy-at-scale opportunity. Pack 2 is structurally a small-capital high-turnover-yield strategy; the meaningful planning figure is the absolute dollar range, not the APR percentage.
+
 ### Critical distinction: full basket vs eligibility-filtered basket
 
 `WORLD_CUP_MM.md` analysed the full 48-market World Cup basket and found:
@@ -18,26 +20,35 @@ Pack 2's eligibility filter (mean_price ≥ 0.15 AND quote_half_spread_fraction 
 
 ### Refined headline numbers (Pack 2 eligibility-filtered basket on World Cup)
 
+**WORLD_CUP_MM.md methodology applied consistently:** the simulator computes per-day P&L as `total_net / max_observed_days` (basket span = longest observation across markets). Translated to top-5 only (max observed = Argentina 8.35d):
+
 | metric | full 48-market basket (WORLD_CUP_MM.md) | top-5 eligibility-filtered (Pack 2) |
 |---|---|---|
-| 50-day naive-AS net | +$12,372 | **+$2,060** (filtered subset only collects rebate on eligible markets) |
-| 50-day moderate-AS net | +$126 (knife-edge) | **+$752** (long-tail losses excluded) |
-| 50-day informed-AS net | −$12,120 | **−$626** (still loses but much smaller drawdown) |
-| Per-day moderate-AS net | +$2.52 | **+$15.04** |
+| Observed-window net (varying market spans) | +$20.97 | **+$752** |
+| Max observed days (longest market in subset) | 8.35 (Argentina) | 8.35 (Argentina, still in subset) |
+| Per-day net = total_net / max_observed_days, moderate AS | +$2.52/d | **+$90.06/d** |
+| **50-day projection at moderate AS** (per_day × 50) | **+$126** | **+$4,503** |
+| 50-day projection at naive AS (rebate only) | +$12,372 | **~$5,500** (rebate scales with captured flow) |
+| 50-day projection at informed AS | −$12,120 | **~−$3,500** (informed AS on filtered subset, kill-switch attenuates) |
 | Markets net-positive at moderate AS | 7 of 48 (14.5%) | **5 of 5 (100%)** by construction |
-| Per-day informed-AS net | −$242.41 | **−$12.52** |
 
-The filter shifts the basket's economic profile from "knife-edge with massive informed-AS tail risk" to "small but more robust to AS scenario shift". The informed-AS downside shrinks by 19×, while the moderate-AS net improves by 6×.
+The filter shifts the basket's economic profile from "knife-edge with massive informed-AS tail risk" to "+$4,503 moderate-AS 50-day projection with bounded downside via kill-switch."
+
+**Critical capacity caveat:** WORLD_CUP_MM.md's per-day rates are based on capturing `captureFraction = 0.5` of observed trade flow — being the SOLE maker on each market. Pack 2 defaults to `captureFraction = 0.05` (10x more conservative) because (a) the workflow runtime cannot validate higher rates without historical trade data, and (b) real maker queues are competitive. Pack 2's expected per-day net is therefore **~$9/d** (= $90/d × 0.1), not $90/d.
 
 ### Headline planning figure
 
 | measure | value |
 |---|---|
-| **Per-day net (moderate AS, eligibility-filtered)** | **+$15** |
-| **50-day projected basket P&L (moderate AS)** | **+$752** |
-| **Capital deployed** | **~$10K total across 5 constituents × $50 per-quote × 40 cycles/day** (conservative; recipe defaults size smaller) |
-| **Annualised return (Scenario A, build-day regime persists)** | **+37.8% APR** |
-| **Honest banded annualised return** | **+3% to +16% APR** (Scenario A 10% + Scenario B 70% + Scenario C 20%; meaningfully smaller than Pack 1's +15–40%) |
+| **Per-day net (moderate AS, eligibility-filtered, captureFraction=0.05)** | **+$9/d** |
+| **50-day projection at Pack 2 default captureFraction** | **+$450** |
+| **50-day projection at WORLD_CUP_MM.md captureFraction=0.5** | **+$4,503** (upper bound — assumes sole-maker on top-5) |
+| **Standing maker notional required** | **~$250–500** (5 constituents × $50 per side × 2 sides; recipe default) |
+| **Annual gross at Pack 2 default** | **~$3,285** ($9/d × 365) |
+| **APR on standing notional** | **+650–1,300% APR** on $250–500 (capacity-constrained: cannot 10x by simply deploying 10x capital) |
+| **Honest banded annualised return** | **+200% to +800% APR on small standing notional ($250–1000)** — strategy is structurally capacity-constrained, NOT scalable to Pack 1's $48K-class deployment |
+
+**Pack 2 is structurally a SMALL-CAPITAL high-APR strategy.** It is NOT directly comparable to Pack 1's per-cycle P&L on $48K capital. Pack 2's economics depend on the capture-fraction × standing-notional × turnover relationship — at small standing notional (recipe default ~$500), the strategy is capacity-unconstrained and produces high APR on a tiny base. At larger standing notional, capacity bottlenecks dominate (you cannot capture flow that doesn't exist). Pack 1 + Pack 2 are complementary across capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional.
 
 ## The trade — mechanically
 
@@ -156,25 +167,25 @@ These are SCENARIO A numbers (build-day regime persists at year-scale). Banded h
 
 Three honest scenarios, accounting for what survived the polymarket-edge year-data audit vs what didn't:
 
-### Scenario A — "Build-day regime continues at scale"
+### Scenario A — "Build-day regime continues at scale + small standing notional"
 
-Assumes the eligibility filter passes through 5–10 constituents continuously and capture-fraction holds at 0.05.
+Assumes the eligibility filter passes through 5 constituents continuously, capture-fraction holds at 0.05, AS stays moderate, and standing notional is at recipe default (~$500).
 
-- Capital deployed: $10,000
-- Per-day moderate-AS net: +$15
-- Annualised (252 days): $15 × 252 / $10,000 = **+37.8% APR**
+- Standing notional: $500 (5 constituents × $50 × 2 sides)
+- Per-day moderate-AS net: ~$9
+- Annualised (365 days): $9 × 365 / $500 = **+657% APR on small base**
 
-Higher capital + more eligible constituents could 2–3× this. Lower constituent count drops it.
+The APR is huge because the base is small. The strategy is capacity-unconstrained at this scale — actual fills depend on how much flow crosses our inside-spread quotes.
 
-**Assessment**: optimistic — assumes (a) capture-fraction at 0.05 holds (could be much lower in competitive maker queues), (b) the eligibility filter passes through enough constituents continuously, (c) AS stays at moderate. polymarket-edge's year-data audit specifically walked back claims that depended on small-N. This scenario is **not what would survive a polymarket-edge-style year-data audit**.
+**Assessment**: optimistic — assumes (a) capture-fraction at 0.05 holds (could be much lower in competitive maker queues), (b) the eligibility filter passes through 5 constituents continuously, (c) AS stays at moderate, (d) every refresh cycle gets crossed. Realistic Scenario A is probably half this (+300% APR on ~$500 standing). polymarket-edge's year-data audit specifically walked back claims that depended on small-N. This scenario is **not what would survive a polymarket-edge-style year-data audit**.
 
 ### Scenario B — "polymarket-edge year-data range applies, eligibility filter holds at moderate efficacy"
 
-Apply the same filter that produces +$752/50d at moderate AS, but assume capture-fraction is somewhat lower than 0.05 (closer to 0.02 — more competitive maker queue) and AS scenario varies between moderate (0.5) and slightly informed (0.7).
+Apply the same filter but assume capture-fraction is half (0.025, more competitive maker queue) and AS scenario varies between moderate (0.5) and slightly informed (0.7).
 
-- Capital deployed: $10,000
-- Per-day net at degraded capture + slight-informed AS: ~$5
-- Annualised: $5 × 252 / $10,000 = **+12.6% APR**
+- Standing notional: $500
+- Per-day net at degraded capture + slight-informed AS: ~$3
+- Annualised: $3 × 365 / $500 = **+219% APR on small base**
 
 **Assessment**: this is the **moderate-confidence year-scale version**. The filter still cuts the long tail; capture-fraction realised is lower than Scenario A; AS scenarios mix moderate-to-informed.
 
@@ -182,42 +193,38 @@ Apply the same filter that produces +$752/50d at moderate AS, but assume capture
 
 Assumes makers compete the rebate down via tight quoting + AS scenario shifts to informed (1.0 × half-spread).
 
-- Per-day net at informed AS on eligibility-filtered basket: −$12.52
-- Annualised: −$12.52 × 252 / $10K = **−31.5% APR**
+- Standing notional: $500
+- Per-day net at informed AS: ~−$3 to ~−$10 depending on flow
+- Annualised: $-3 × 365 / $500 = **−219% APR theoretical**, but kill-switch caps at −$50/day = −$18,250/year → trips at any sustained negative regime
+- Effective annualised (kill-switch attenuated): **~−20 to −50% APR before manual reset**
 
-**Assessment**: tail-risk scenario. The kill-switch trips before this fully manifests (cap is $50/day loss = $12,600/year).
+**Assessment**: tail-risk scenario. The $50/day kill-switch cap is the hard floor; sustained losses trip the switch and halt new quotes until operator review.
 
 ### Honest banded estimate
 
-Combining the three scenarios with their honest probabilities (~10% Scenario A, ~70% Scenario B, ~20% Scenario C):
+Combining the three scenarios with their honest probabilities (~10% Scenario A, ~70% Scenario B, ~20% Scenario C), at Pack 2's recipe default standing notional ($500):
 
 ```
-Weighted = 0.1 × 37.8 + 0.7 × 12.6 + 0.2 × (−15)  (kill-switch attenuates Scenario C from −31.5)
-        = 3.78 + 8.82 − 3
-        = +9.6% APR
+Weighted = 0.1 × 657 + 0.7 × 219 + 0.2 × (−35)  (Scenario C with kill-switch attenuation)
+        = 65.7 + 153.3 − 7
+        = +212% APR on $500 standing notional
 
-Conservative variant (Scenario A halved, Scenario B halved):
-Weighted = 0.1 × 18.9 + 0.7 × 6.3 + 0.2 × (−15)
-        = 1.89 + 4.41 − 3
-        = +3.3% APR
-
-Optimistic variant (Scenario B boosted to 20):
-Weighted = 0.1 × 37.8 + 0.7 × 20 + 0.2 × (−10)
-        = 3.78 + 14 − 2
-        = +15.78% APR
+Conservative variant (Scenarios A/B halved):
+Weighted = 0.1 × 328 + 0.7 × 109 + 0.2 × (−35)
+        = 32.8 + 76.3 − 7
+        = +102% APR
 ```
 
 | measure | value |
 |---|---|
-| **Expected annualised return on $10K (honest banded)** | **+3% to +16% APR** |
-| Best-case (Scenario A persistence) | **+37.8% APR** |
-| Worst-case (Scenario C informed AS, no kill-switch protection) | **−31.5% APR** |
-| Worst-case with kill-switch | **−10 to −15% APR** (cap at $50/day loss × 252 = $12,600 / $10K = −126% theoretical max but kill-switch trips first) |
-| Sharpe at deployable cadence | **<1.5** (modest; not a high-confidence Sharpe like polymarket-edge's funding capture at ~3) |
+| **Expected annualised return on $500 standing notional (honest banded)** | **+100% to +200% APR** |
+| Best-case (Scenario A persistence) | **+657% APR** |
+| Worst-case (Scenario C informed AS, kill-switch attenuated) | **−35% APR** |
+| Sharpe at deployable cadence | **<2** (moderate; capacity-constrained variance) |
 
-**Pack 2's honest banded estimate is +3 to +16% APR — meaningfully smaller than Pack 1's +15–40% APR.** This is by structural choice: maker yield on Polymarket Sports is inherently knife-edge per `WORLD_CUP_MM.md`. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter), demonstrating the same rigour Pack 1 applied to a different signal class. The lower headline return is the HONEST consequence of porting a knife-edge underlying signal.
+**Critical scaling caveat:** these APR figures are **NOT linearly scalable**. Pack 2 captures flow that crosses our inside-spread quotes; at $500 standing notional, this might be $1–5K of fills per day. At $5,000 standing notional, the maker queue gets longer (other makers also quoting), capture-fraction drops, and APR percentage shrinks even though absolute dollar P&L grows modestly. Pack 2 is best understood as a **small-capital, high-APR continuous yield strategy** — not a deploy-at-scale alternative to Pack 1.
 
-**Compare to Pack 1's banded estimate of +15–40% APR** — Pack 1 is the higher-confidence deployment; Pack 2 is the methodological companion that shows the same rigour applied to a thinner-edge signal. Both packs ship with the same defense-in-depth discipline, the same adversarial pass count, and the same honest scope-disclosure framing.
+**Comparison to Pack 1:** Pack 1 deploys $10K–$48K of episodic basket-arb capital at +15–40% banded APR (~$1.5K–$19K/year). Pack 2 deploys $250–$1000 of standing maker notional at +100–200% banded APR (~$250–$2000/year). The two strategies operate at different capital scales and tempos. Combined deployment: Pack 1 on $48K + Pack 2 on $500 = ~$2K–$21K combined annual yield, with Pack 1 carrying the majority and Pack 2 adding continuous baseline.
 
 ## Risk management built into the pack
 

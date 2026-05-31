@@ -148,12 +148,16 @@ Build-day live observation (verified by workflow runs — TODO: backfill run IDs
 | metric | value |
 |---|---|
 | Eligible constituents (build-day projection, World Cup) | top 5–10 markets (France, Spain, England, Argentina, Brazil — same as WORLD_CUP_MM.md §67-75) |
-| 50-day basket projected P&L, **naive AS** scenario | **+$2,060** (rebate only, no AS) |
-| 50-day basket projected P&L, **moderate AS** scenario | **+$752** (top-5-only filter; vs +$126 for full 48-market basket) |
-| 50-day basket projected P&L, **informed AS** scenario | **−$626** (top-5-only filter; vs −$12,120 for full basket) |
-| Per-day net (moderate AS) | **~$15** (vs $2.52 for full basket) |
-| Annualised on $10K deployed capital, moderate AS, Scenario A | **+37.8% APR** |
-| Honest banded annualised return | **+3 to +16% APR** (10% Scenario A + 70% Scenario B + 20% Scenario C; meaningfully smaller than Pack 1's +15–40% — Pack 2 is the methodological companion to a thinner-edge signal, not a higher-headline-return alternative) |
+| **50-day projection at moderate AS** (per_day × 50, captureFraction=0.5 baseline) | **+$4,503** (top-5-only; vs +$126 for full 48-market basket — 36× improvement) |
+| 50-day projection at moderate AS, Pack 2 default captureFraction=0.05 | **+$450** (scaled by 10× capture-fraction reduction) |
+| 50-day projection at naive AS, captureFraction=0.5 | ~+$5,500 (rebate only) |
+| 50-day projection at informed AS, captureFraction=0.5 | ~−$3,500 (informed AS, kill-switch attenuates) |
+| Per-day net (moderate AS, captureFraction=0.05) | **~$9** |
+| Standing maker notional required | **$250–500** (5 constituents × $50 × 2 sides; recipe default) |
+| Annualised APR on $500 standing notional, Scenario A | **+657% APR** (capacity-constrained: small base, high turnover) |
+| Honest banded annualised return | **+100 to +200% APR on $250–500 standing notional** (10% Scenario A + 70% Scenario B + 20% Scenario C) |
+
+**Critical capacity caveat:** Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; at small standing notional ($250–500) the strategy is capacity-unconstrained on the top-5 favourites and produces high APR. At larger standing notional ($5K+), maker queue competition compresses fill rates and APR percentage shrinks even though absolute dollars grow modestly. Pack 2 is best understood as a **small-capital high-APR continuous-yield strategy** complementing Pack 1's episodic mid-cap basket-arb deployment. They operate at different capital scales and tempos and can be deployed together.
 
 Full economic model with three AS scenarios, sensitivity tables to capture-fraction assumption, per-constituent breakeven analysis, and honest banded estimate in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 

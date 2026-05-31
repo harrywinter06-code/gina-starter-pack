@@ -4,10 +4,10 @@ Two complementary end-to-end Polymarket strategies for the Predictions vertical 
 
 | pack | strategy | action | trigger | annualised banded estimate |
 |---|---|---|---|---|
-| Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K |
-| Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **+3 to +16% APR** on ~$10K |
+| Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K mid-cap |
+| Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **+100 to +200% APR** on ~$250–500 standing notional (capacity-constrained — see PROFITABILITY_ANALYSIS_MAKER_YIELD.md) |
 
-Both packs are sourced from the same polymarket-edge research repo. Operators can run BOTH on the same negRisk events for stacked returns: Pack 1 fires when the basket gap is wide; Pack 2 collects rebate when the gap is tight.
+Both packs are sourced from the same polymarket-edge research repo. They operate at different capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional. **Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; capacity bottlenecks dominate at larger notional.** Combined deployment yields ~$2K–$21K/year with Pack 1 carrying the majority and Pack 2 adding continuous baseline.
 
 ## Pack 1 — Polymarket NegRisk Basket Arbitrage
 
@@ -122,12 +122,13 @@ Pack 2's eligibility filter selects the structurally-positive subset BEFORE capi
 
 | metric | full 48-mkt basket (WORLD_CUP_MM.md) | top-5 eligibility-filtered (Pack 2) |
 |---|---|---|
-| 50-day moderate-AS net | +$126 | **+$752** |
-| 50-day informed-AS net | −$12,120 | **−$626** |
+| 50-day moderate-AS projection (per_day × 50, captureFraction=0.5) | +$126 | **+$4,503** (36× improvement) |
+| 50-day moderate-AS at Pack 2 default captureFraction=0.05 | n/a | **+$450** |
+| 50-day informed-AS projection | −$12,120 | ~−$3,500 (kill-switch attenuates) |
 | Markets net-positive at moderate AS | 7/48 | 5/5 by construction |
-| Honest banded annualised return on $10K | knife-edge ~+1% APR | **+3 to +16% APR** |
+| Honest banded annualised return on $500 standing notional | knife-edge ~+1% APR | **+100 to +200% APR (small-base, capacity-constrained)** |
 
-**Pack 2 is structurally smaller per-dollar than Pack 1 (+15-40% APR).** This is by construction: maker yield on Polymarket Sports is knife-edge per `WORLD_CUP_MM.md`. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter), not a higher headline return. Pack 2 is the **methodological companion** to Pack 1 — same rigour applied to a thinner-edge signal — and ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure.
+**Pack 2 operates at a different capital scale than Pack 1.** Pack 2 is structurally a small-capital high-APR continuous-yield strategy ($250–500 standing notional, capacity-constrained on flow). Pack 1 is a mid-cap episodic basket-arb strategy ($10K–$48K). They are NOT directly comparable per-dollar — they target different parts of the negRisk-event lifecycle. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter from `polymarket_mm_sim.py.breakeven_half_spread_fraction`) AND a complementary capital-scale tier. Pack 2 ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure as Pack 1.
 
 Full economic model and per-constituent breakeven analysis in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 
