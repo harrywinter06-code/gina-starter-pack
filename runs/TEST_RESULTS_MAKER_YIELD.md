@@ -4,9 +4,9 @@ Pack 2 adversarial verification ledger. Captured 2026-05-31, mirroring the seven
 
 ## Honest scope statement
 
-Pack 2 was developed AFTER the transient Gina MCP JWT used to verify Pack 1 (run_mpsyz2s9n04sjb, run_mpsz2ui80f76te) had expired. Passes 4 (live runtime structural) and 5 (live end-to-end with real signal) are therefore documented as **pending operator live-runtime verification** rather than verified in this build session. The remaining passes (1, 2, 3, 6, 7) are completed; Pack 2's workflow TS files have been validated structurally and adversarially using the same discipline that found bugs in Pack 1 before ship.
+Pack 2 was developed AFTER the transient Gina MCP JWT used to verify Pack 1 (run_mpsyz2s9n04sjb, run_mpsz2ui80f76te) had expired. Passes 4 (live runtime structural) and 5 (live end-to-end with real signal) and 6 (plug-and-play self-bootstrap) were originally documented as pending operator live-runtime verification. **They are now VERIFIED LIVE (2026-05-31)** against a refreshed JWT, run IDs `run_mpttawax1t17ar` (scanner) and `run_mpttggw2dy9yh7` (executor). See the per-pass sections below for run IDs, durations, and output snippets.
 
-This is the same submission-status discipline applied throughout the pack: declare what is verified, declare what is pending, do not overstate.
+This is the same submission-status discipline applied throughout the pack: declare what is verified, declare what is pending, do not overstate. **Scope discipline for the live result:** the runs prove the workflows execute correctly in Gina's runtime and the eligibility filter behaves as designed against live Polymarket data. They do NOT validate the WORLD_CUP_MM economic projections — the executor ran in dryRun and the per-day net figures are the scanner's own captureFraction×spread sim, never externally realized.
 
 ---
 
@@ -90,60 +90,101 @@ This is the same submission-status discipline applied throughout the pack: decla
 
 ## Pass 4 — Live runtime structural verification
 
-**Status:** PENDING operator verification.
+**Status:** ✅ VERIFIED LIVE (2026-05-31).
 
-The Gina MCP JWT used to verify Pack 1's runs (`run_mpsyz2s9n04sjb`, `run_mpsz2ui80f76te`) expired between Pack 1's ship and Pack 2's build. The operator should run:
+Both workflow TS files were installed to `/workspace/automations/workflows/<id>@latest.ts` (SHA256-verified byte-for-byte against the repo `references/` copies: scanner `7c6ec8de…`, executor `5c00ba7b…`) and validated in Gina's actual runtime:
 
 ```
 $ workflow validate negrisk-maker-yield-scanner
+{"ok":true,"workflow":{"id":"negrisk-maker-yield-scanner","name":"NegRisk Maker Yield Scanner","steps":3}}
+
 $ workflow validate negrisk-maker-yield-executor
+{"ok":true,"workflow":{"id":"negrisk-maker-yield-executor","name":"NegRisk Maker Yield Executor","steps":5}}
 ```
 
-Expected output (per Pack 1 pattern):
-```
-{"ok":true,"workflow":{"id":"negrisk-maker-yield-scanner","steps":3}}
-{"ok":true,"workflow":{"id":"negrisk-maker-yield-executor","steps":5}}
-```
-
-If either validation fails, the failure mode will surface as a parse or schema error and can be triaged by re-reading the affected step's `code: [...]` block.
+Scanner: `ok:true`, 3 steps. Executor: `ok:true`, 5 steps. No parse or schema errors.
 
 ---
 
 ## Pass 5 — Live end-to-end with real signal
 
-**Status:** PENDING operator verification.
+**Status:** ✅ VERIFIED LIVE (2026-05-31).
 
-Once Pass 4 succeeds, operator should run:
+### Scanner run
 
 ```
 $ workflow run negrisk-maker-yield-scanner --summary
-$ cat /workspace/scratch/makeryld_eligibility.md
+{"runId":"run_mpttawax1t17ar","status":"completed","duration":16483,"stepCount":3,"failedStepCount":0}
 ```
 
-Expected output structure:
-- Eligible-constituent count (likely 0–10 on a typical day; can be empty if no events pass the structural filter)
-- Per-event basket totals showing per-scenario (naive/moderate/informed) net per day
-- Top-5 eligible constituents ranked by moderate-AS net per day
+Step breakdown: fetch_and_register 3126ms · walk_and_score 10418ms · filter_and_surface 734ms. All completed, 0 failed.
 
-**Critical Phase C verification target (from the plan steelman):** Does the eligibility filter at `quote_half_spread_fraction ≤ 0.00375` actually pass through the WORLD_CUP_MM.md top-5 (France, Spain, England, Argentina, Brazil)? Or is it too strict and produces near-empty output?
+`/workspace/scratch/makeryld_eligibility.md`:
 
-If the filter is too strict, consider relaxing `maxSpreadFraction` to 0.005 (1.33× moderate-AS-breakeven; introduces some post-hoc selection risk but produces a workable basket). Document the relaxation decision in operator notes.
+```
+# NegRisk Maker Yield — Eligibility Scan
+Timestamp: 2026-05-31T13:25:20.520Z
+Eligible constituents: 2
+Total moderate-AS net per day (USD): 28.61
+
+## Per-event baskets (moderate AS)
+- world-cup-winner (2 eligible) | naive $133.83/d | moderate $28.61/d | informed $-76.60/d
+
+## Top eligible constituents (by moderate-AS net per day)
+- will-france-win-the-2026-fifa-world-cup-924 | mid $0.171 | spread frac 0.293% | 24h vol $785,489 | mod $16.05/d
+- will-spain-win-the-2026-fifa-world-cup-963  | mid $0.169 | spread frac 0.297% | 24h vol $642,028 | mod $12.56/d
+```
+
+### Critical Phase C verification target (from the plan steelman) — RESOLVED, with a correction
+
+The original target asked whether the filter passes the WORLD_CUP_MM.md top-5 (France, Spain, England, Argentina, Brazil), and pre-proposed relaxing `maxSpreadFraction 0.00375 → 0.005` if it came back near-empty. **The live run shows that relaxation is the wrong lever and was NOT applied.**
+
+27 constituents were scored (all from `world-cup-winner`). Only 2 are eligible — France and Spain. The full scored set:
+
+| constituent | mid | spread frac | mean≥0.15 | spread≤0.375% | eligible |
+|---|---|---|---|---|---|
+| France | 0.171 | 0.293% | ✓ | ✓ | **ELIG** |
+| Spain | 0.169 | 0.297% | ✓ | ✓ | **ELIG** |
+| England | 0.113 | 0.444% | ✗ | ✗ | – |
+| Portugal | 0.100 | 0.502% | ✗ | ✗ | – |
+| Brazil | 0.089 | 0.559% | ✗ | ✗ | – |
+| Argentina | 0.086 | 0.578% | ✗ | ✗ | – |
+| Germany | 0.051 | 0.971% | ✗ | ✗ | – |
+| …20 more longshots | ≤0.042 | 1.2%–33% | ✗ | ✗ | – |
+
+**The binding constraint is the `mean_price ≥ 0.15` price floor, not the spread.** Spread fraction is mechanically anti-correlated with price because Polymarket has a ~$0.001 minimum tick — at a 17¢ mid one tick ≈ 0.29%, at a 9¢ mid the same tick ≈ 0.56%. So every constituent below France/Spain fails the price floor regardless of spread. Relaxing `maxSpreadFraction` to 0.005 would admit **zero** additional names: the only constituent in the 0.375–0.5% spread band is England (0.444%), and England's 0.113 mid is below the 0.15 floor anyway. Only two World Cup constituents are priced above 15¢, and the filter correctly surfaced both.
+
+**Verdict:** the eligibility filter behaves exactly as designed against live data — it is not malfunctioning, it is correctly reflecting that the live World Cup book has only two constituents above the price floor. This is the one genuine external test in Pack 2's verification, and it returns a real (if small) basket of legitimate favourites. The `moderate $16.05/d` and `$12.56/d` figures are the scanner's own sim outputs (rebate − moderate-AS × captured notional), not externally realized P&L.
 
 ---
 
 ## Pass 6 — Plug-and-play self-bootstrap
 
-**Status:** PENDING operator verification.
+**Status:** ✅ VERIFIED LIVE (2026-05-31).
 
 Inherited verbatim from Pack 1's verified self-bootstrap pattern (Step 1 of `negrisk-event-arbitrage-surfacer@latest.ts`). The same `exec` → `host-tools fetchPolymarketData` → `sqlite_master` discovery → dedup-by-`market_id` flow is used in Pack 2's scanner.
 
-Expected install sequence:
+The scanner run above (`run_mpttawax1t17ar`) started from a clean install with no pre-populated table. Its `fetch_and_register` step self-bootstrapped via the embedded `exec` call, discovered the auto-registered `fetchPolymarketData_<hash>` table, deduped by `market_id`, and produced 27 scored constituents — all within a 3126ms step. No operator setup command was required.
+
+### Executor end-to-end (dryRun) — completes the pipeline
+
+The executor consumes the scanner's `makeryld:eligible_constituents` KV and was run live immediately after the scanner:
+
 ```
-$ workflow install negrisk-maker-yield-scanner
-$ workflow install negrisk-maker-yield-executor
-$ workflow run negrisk-maker-yield-scanner --summary
-# Expect: completed in ~11 seconds with real signal output
+$ workflow run negrisk-maker-yield-executor --summary
+{"runId":"run_mpttggw2dy9yh7","status":"completed","duration":7825,"stepCount":5,"failedStepCount":0}
 ```
+
+All 5 steps completed, 0 failed. `/workspace/scratch/makeryld_cycle.json` shows **2 quotes planned, both `status: "dry_run_open"`, `dryRun: true`, `errors: []`** — no `managePredictionOrders` submissions (the live path is commented out, as designed):
+
+```
+France (yes_token …842092): mid 0.1705, allocated $50 → buy $25 @ 0.1705 + sell $25 @ 0.1705
+Spain  (yes_token …308080): mid 0.1685, allocated $50 → buy $25 @ 0.1685 + sell $25 @ 0.1685
+```
+
+`makeryld_summary.md`: `Settled this cycle: 0 · Today P&L: $0.0000` — correct: at a 1-tick-wide book the 5bp offset collapses both sides to the mid (buy at bestAsk−5bp, sell at bestBid+5bp both ≈ mid), so the just-posted limits are not crossed by the current book within the same cycle, hence zero hypothetical fills. The risk-gate, two-sided quote planning, KV persistence, and settlement loop all executed correctly in dryRun.
+
+Two-command install (`validate` → `run`) works end-to-end with zero operator-side setup, matching Pack 1's plug-and-play standard.
 
 ---
 
@@ -265,9 +306,9 @@ In practice the host-tool generates alphanumeric hashes, so the attack is not cu
 | 1. Methodology port validation | Reference: `polymarket_mm_sim.py` | ✅ Equivalent at analytic core |
 | 2. Adversarial red-team on workflow code | Structural bypass attempts | ✅ 1 bug fixed (zero-volume eligibility) |
 | 3. TypeScript parse | Pattern-equivalent to Pack 1's verified files | ✅ Inferred from pattern equivalence |
-| 4. Live runtime structural | `workflow validate` in Gina's actual runtime | ⏳ PENDING operator verification |
-| 5. Live end-to-end with real signal | Pipeline produces classified output | ⏳ PENDING operator verification |
-| 6. Plug-and-play self-bootstrap | Zero-setup install | ⏳ PENDING operator verification |
+| 4. Live runtime structural | `workflow validate` in Gina's actual runtime | ✅ VERIFIED LIVE — scanner steps:3, executor steps:5 |
+| 5. Live end-to-end with real signal | Pipeline produces classified output | ✅ VERIFIED LIVE — run_mpttawax1t17ar; 2 eligible (France, Spain); price-floor is binding constraint |
+| 6. Plug-and-play self-bootstrap | Zero-setup install | ✅ VERIFIED LIVE — executor run_mpttggw2dy9yh7, 2 dryRun quotes planned, 0 failed |
 | 7. Pre-send adversarial sweep | Bypass attempts on the trade-capable executor | ✅ 1 design clarification + 1 bug fix |
 | **8. Post-push rigorous redteam** | **Adversarial bypass code per CLAUDE.md protocol** | **✅ 4 bugs found and fixed: P&L inversion (CRITICAL), economic model 10x error (CRITICAL), SQL injection defense (MEDIUM × 2 sites)** |
 
@@ -275,7 +316,7 @@ In practice the host-tool generates alphanumeric hashes, so the attack is not cu
 
 Pass 8 found and fixed FOUR additional bugs after the initial seven-pass discipline declared Pack 2 ready. Three of the four bugs were in CRITICAL or load-bearing paths (P&L estimator semantics, economic model headline, SQL interpolation across 3+ workflows). This validates the adversarial protocol's premise: "documented as known gap" and "I checked the logic" cannot substitute for runnable bypass attempts.
 
-**Pack 2 (and Pack 1) are now more defensible than at first push** — but no more verified-live than before, since live MCP verification remains pending operator-side.
+**Pack 2 (and Pack 1) are now more defensible than at first push.** Live MCP verification — pending at the time Pass 8 was written — was subsequently completed on 2026-05-31 (Passes 4–6 above, run IDs `run_mpttawax1t17ar` and `run_mpttggw2dy9yh7`).
 
 ---
 
@@ -388,9 +429,9 @@ Validation scripts: `/tmp/ts-validate/validate.mjs` (TypeScript parse), `/tmp/te
 | 1. Methodology port validation | Reference: `polymarket_mm_sim.py` | ✅ Equivalent at analytic core; depth-walked spread is the documented refinement |
 | 2. Adversarial red-team on workflow code | Structural bypass attempts | ✅ 1 bug found and fixed (zero-volume eligibility bypass) |
 | 3. TypeScript parse | Pattern-equivalent to Pack 1's verified files | ✅ Inferred from pattern equivalence; recommended for operator re-validation |
-| 4. Live runtime structural | `workflow validate` in Gina's actual runtime | ⏳ PENDING operator verification |
-| 5. Live end-to-end with real signal | Pipeline produces classified output | ⏳ PENDING operator verification |
-| 6. Plug-and-play self-bootstrap | Zero-setup install | ⏳ PENDING operator verification (inherits Pack 1's verified pattern) |
+| 4. Live runtime structural | `workflow validate` in Gina's actual runtime | ✅ VERIFIED LIVE — scanner steps:3, executor steps:5 |
+| 5. Live end-to-end with real signal | Pipeline produces classified output | ✅ VERIFIED LIVE — run_mpttawax1t17ar; 2 eligible (France, Spain); price-floor is binding constraint |
+| 6. Plug-and-play self-bootstrap | Zero-setup install | ✅ VERIFIED LIVE — executor run_mpttggw2dy9yh7; inherits Pack 1's verified pattern |
 | 7. Pre-send adversarial sweep | Bypass attempts on the trade-capable executor | ✅ 1 design clarification + 1 bug fix documented |
 
 ## Honest scope summary
@@ -398,7 +439,7 @@ Validation scripts: `/tmp/ts-validate/validate.mjs` (TypeScript parse), `/tmp/te
 - **Methodology**: ported from polymarket-edge `WORLD_CUP_MM.md` + `polymarket_mm_sim.py` with the documented depth-walked-spread refinement. Equivalent at the analytic core.
 - **Structural correctness**: pattern-equivalent to Pack 1's verified workflow files; same self-bootstrap, same parallel walk via `Promise.all`, same SQL-injection-free constituent fetch.
 - **Adversarial bugs caught pre-ship**: 1 (zero-volume eligibility bypass).
-- **Live runtime verification**: PENDING. Operator to run Passes 4–6 on first install.
+- **Live runtime verification**: ✅ COMPLETED 2026-05-31. Scanner `run_mpttawax1t17ar` and executor `run_mpttggw2dy9yh7` ran clean (0 failed steps) in Gina's runtime; eligibility filter returned 2 legitimate favourites (France, Spain) against live Polymarket data. Executor planned 2 dryRun quotes; no live submissions.
 - **Defense-in-depth on the executor's trade path**: identical to Pack 1 (dryRun hardcoded, submission lines commented, kill-switch on daily-loss-cap).
 
-**Pack 2's verification depth matches Pack 1's at the structural / methodological / adversarial layers. Live-runtime depth is operator-completable rather than completed-in-this-session, and this is disclosed honestly throughout the pack's MDs.**
+**Pack 2's verification depth matches Pack 1's at the structural / methodological / adversarial AND live-runtime layers. Live-runtime depth is now completed-in-session (2026-05-31): both workflows validated and ran clean against live data, run IDs `run_mpttawax1t17ar` / `run_mpttggw2dy9yh7`. The honest residual caveat is that the executor ran dryRun and the per-day economic figures are sim-derived, never externally realized — the live test validates execution correctness and filter behaviour, not the WORLD_CUP_MM yield numbers.**
