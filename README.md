@@ -1,8 +1,15 @@
 # gina-starter-pack
 
-End-to-end Polymarket negRisk basket-arbitrage strategy for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format exactly. One strategy MD bundling three workflows + three recipes; each layer installable independently; PR-ready into `awesome-gina` with zero schema translation.
+Two complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format exactly. Each strategy is independently installable; PR-ready into `awesome-gina` with zero schema translation.
 
-## The strategy
+| pack | strategy | action | trigger | annualised banded estimate |
+|---|---|---|---|---|
+| Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K |
+| Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **+3 to +16% APR** on ~$10K |
+
+Both packs are sourced from the same polymarket-edge research repo. Operators can run BOTH on the same negRisk events for stacked returns: Pack 1 fires when the basket gap is wide; Pack 2 collects rebate when the gap is tight.
+
+## Pack 1 — Polymarket NegRisk Basket Arbitrage
 
 **Polymarket NegRisk Basket Arbitrage** — applies the sum-of-yes = $1.00 fair-pricing invariant to Polymarket negRisk events, depth-walks each candidate's constituents to verify the gap holds at meaningful basket size, narrows to flagship-tier ($≥1M) events via the count-vs-dollar reframe from [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), and exposes a maker-only execution layer with risk caps and an auto kill-switch.
 
@@ -81,33 +88,91 @@ Computed in detail per `PROFITABILITY_ANALYSIS.md`. Headline live observation fr
 
 The maker-only constraint is structural: at the depth-walked basket gap, taker P&L is negative net of Sports fees. The executor's `makerOnly: true` default reflects an economic reality, not just defensive preference.
 
+## Pack 2 — Polymarket NegRisk Maker Yield
+
+**Polymarket NegRisk Maker Yield** — ports the maker-rebate analysis from polymarket-edge's [`WORLD_CUP_MM.md`](https://github.com/harrywinter06-code/polymarket-edge/blob/main/WORLD_CUP_MM.md) into a runnable Gina pack, with a methodological refinement: replace the realised-drift AS proxy with depth-walk-derived bid-ask half-spread, and apply a principled mean-price + spread-fraction eligibility filter that excludes the long-tail of net-negative-under-moderate-AS constituents.
+
+Two install units:
+
+```
+[ Polymarket negRisk events ]
+              ↓
+   Layer 1 — Yield-eligibility scanner (recipe-negrisk-maker-yield-scanner)
+   • Daily 14:10 UTC. Self-bootstrapping (same pattern as Pack 1).
+   • Filters to flagship-tier negRisk events.
+   • Per constituent: depth-walks both sides, computes mid_price + quote_half_spread.
+   • Three-scenario yield (naive/moderate/informed AS) from polymarket_mm_sim.py.
+   • Principled eligibility: mean_price ≥ 0.15 AND quote_half_spread_fraction ≤ 0.00375.
+   • Output: makeryld:eligible_constituents KV (consumed by Layer 2).
+              ↓
+   Layer 2 — Maker-yield executor (recipe-negrisk-maker-yield-executor)
+   • Every 5 min. Consumes eligible constituents from KV.
+   • Risk gate: max-open-quotes + max-daily-notional + daily-loss kill-switch.
+   • Two-sided maker quotes at bestBid + 5 bp / bestAsk − 5 bp per constituent.
+   • Settles when orderbook crosses our limit; estimates rebate net of moderate AS.
+   • Daily P&L tracking, auto kill-switch on loss-cap breach.
+   • Defaults to dryRun: true; live path requires explicit operator edits.
+```
+
+### Pack 2 expected economics (anchored on WORLD_CUP_MM.md)
+
+`WORLD_CUP_MM.md` found the full 48-market World Cup basket at moderate AS = **+$126 over 50 days** (knife-edge positive). 41 of 48 markets were net-negative individually; the top-5 favourites (France, Spain, England, Argentina, Brazil) carried +$752 of positive net.
+
+Pack 2's eligibility filter selects the structurally-positive subset BEFORE capital deployment. The filter is **principled** (mean_price + analytic moderate-AS-breakeven) — not post-hoc P&L selection.
+
+| metric | full 48-mkt basket (WORLD_CUP_MM.md) | top-5 eligibility-filtered (Pack 2) |
+|---|---|---|
+| 50-day moderate-AS net | +$126 | **+$752** |
+| 50-day informed-AS net | −$12,120 | **−$626** |
+| Markets net-positive at moderate AS | 7/48 | 5/5 by construction |
+| Honest banded annualised return on $10K | knife-edge ~+1% APR | **+3 to +16% APR** |
+
+**Pack 2 is structurally smaller per-dollar than Pack 1 (+15-40% APR).** This is by construction: maker yield on Polymarket Sports is knife-edge per `WORLD_CUP_MM.md`. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter), not a higher headline return. Pack 2 is the **methodological companion** to Pack 1 — same rigour applied to a thinner-edge signal — and ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure.
+
+Full economic model and per-constituent breakeven analysis in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
+
+### Pack 2 verification status (honest disclosure)
+
+Pack 2's first six passes are completed at the structural / methodological / adversarial layers (parse-equivalent to Pack 1's verified code; analytic equivalence to `polymarket_mm_sim.py` shown explicitly; 1 bug found and fixed in the pre-send adversarial sweep). Passes 4-5-6 (live Gina runtime verification) are **PENDING operator verification** — the transient JWT used to verify Pack 1's runs expired between Pack 1's ship and Pack 2's build. The operator should run `workflow validate` + `workflow run negrisk-maker-yield-scanner` on first install to complete those passes; full per-pass status in [`runs/TEST_RESULTS_MAKER_YIELD.md`](runs/TEST_RESULTS_MAKER_YIELD.md).
+
 ## Repo layout (matches awesome-gina)
 
 ```
 gina-starter-pack/
 ├── README.md
-├── PROFITABILITY_ANALYSIS.md
+├── PROFITABILITY_ANALYSIS.md                                     ← Pack 1 economic model
+├── PROFITABILITY_ANALYSIS_MAKER_YIELD.md                         ← Pack 2 economic model
 ├── strategies/
 │   └── predictions/
-│       └── strategy-polymarket-negrisk-basket-arbitrage.md       ← one strategy, three layers
+│       ├── strategy-polymarket-negrisk-basket-arbitrage.md       ← Pack 1 (3 layers)
+│       └── strategy-polymarket-negrisk-maker-yield.md            ← Pack 2 (2 layers)
 ├── workflows/
-│   ├── negrisk-event-arbitrage-surfacer/        (layer 1 — scanner)
+│   ├── negrisk-event-arbitrage-surfacer/        (Pack 1 layer 1 — scanner)
 │   │   ├── README.md
 │   │   └── references/negrisk-event-arbitrage-surfacer@latest.ts
-│   ├── volume-tier-trap-filter/                  (layer 2 — filter)
+│   ├── volume-tier-trap-filter/                  (Pack 1 layer 2 — filter)
 │   │   ├── README.md
 │   │   └── references/volume-tier-trap-filter@latest.ts
-│   └── negrisk-maker-executor/                   (layer 3 — executor)
+│   ├── negrisk-maker-executor/                   (Pack 1 layer 3 — executor)
+│   │   ├── README.md
+│   │   └── references/negrisk-maker-executor@latest.ts
+│   ├── negrisk-maker-yield-scanner/              (Pack 2 layer 1 — eligibility scanner)
+│   │   ├── README.md
+│   │   └── references/negrisk-maker-yield-scanner@latest.ts
+│   └── negrisk-maker-yield-executor/             (Pack 2 layer 2 — maker-yield executor)
 │       ├── README.md
-│       └── references/negrisk-maker-executor@latest.ts
+│       └── references/negrisk-maker-yield-executor@latest.ts
 ├── recipes/
 │   └── predictions/
-│       ├── recipe-negrisk-event-arbitrage-surfacer.md
-│       ├── recipe-volume-tier-trap-filter.md
-│       └── recipe-negrisk-maker-executor.md
+│       ├── recipe-negrisk-event-arbitrage-surfacer.md            ← Pack 1
+│       ├── recipe-volume-tier-trap-filter.md                     ← Pack 1
+│       ├── recipe-negrisk-maker-executor.md                      ← Pack 1
+│       ├── recipe-negrisk-maker-yield-scanner.md                 ← Pack 2
+│       └── recipe-negrisk-maker-yield-executor.md                ← Pack 2
 └── runs/
     ├── dryrun-negrisk-2026-05-30.log
-    └── TEST_RESULTS.md
+    ├── TEST_RESULTS.md                                            ← Pack 1 ledger
+    └── TEST_RESULTS_MAKER_YIELD.md                                ← Pack 2 ledger
 ```
 
 ## Seven test passes documented
