@@ -72,7 +72,7 @@ flowchart TD
 
   A2[Filter cron: 5 14 * * * UTC] --> B2[Same self-bootstrap]
   B2 --> C2[Same aggregation + sanity filter]
-  C2 --> D2[Assign tier: flagship ≥ 1M / mid 100K..1M / tail < 100K]
+  C2 --> D2["Assign tier: flagship ≥ 1M / mid 100K..1M / tail < 100K"]
   D2 --> E2[Filter by allowedTiers config]
   E2 --> F2[Same depth-walk on tier-allowed events only]
   F2 --> G2[Persist voltier:latest_surfaced + breakdown to KV]

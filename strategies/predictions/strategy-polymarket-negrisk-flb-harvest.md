@@ -177,7 +177,7 @@ flowchart TD
   D --> E[Debias: p_true_i = q_i^gamma / sum q^gamma, 3 scenarios]
   E --> F[Tail band 0.01-0.05: sell-edge per share]
   F --> G[Depth-walk tail for tradeability]
-  G --> H{conservative edge clears fee AND >= 3 tradeable?}
+  G --> H{"conservative edge clears fee AND >= 3 tradeable?"}
   H -->|no| I[Filtered out]
   H -->|yes| J[Persist flb:eligible_baskets KV]
 
@@ -191,7 +191,7 @@ flowchart TD
   G2 -->|no + armed| I2[Submit via managePredictionOrders]
   H2 --> J2[Monitor fills, mark expected edge, recompute exposure]
   I2 --> J2
-  J2 --> K2{total exposure > cap?}
+  J2 --> K2{"total exposure > cap?"}
   K2 -->|yes| L2[Trip kill-switch]
 ```
 
