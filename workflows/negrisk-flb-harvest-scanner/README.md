@@ -87,7 +87,7 @@ flowchart TD
   D --> E[De-vig + debias 3 gamma]
   E --> F[Score tail 0.01-0.05]
   F --> G[Parallel depth-walk tail]
-  G --> H{conservative edge clears fee AND >=3 tradeable?}
+  G --> H{"conservative edge clears fee AND >=3 tradeable?"}
   H -->|yes| I[surface: persist flb:eligible_baskets]
   H -->|no| J[Filter out]
 ```

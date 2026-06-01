@@ -89,7 +89,7 @@ flowchart TD
   F -->|no + armed| H[Submit managePredictionOrders]
   G --> I[monitor_and_mark]
   H --> I
-  I --> J{total exposure > cap?}
+  I --> J{"total exposure > cap?"}
   J -->|yes| K[Trip kill-switch]
   J -->|no| L[Persist, return]
 ```

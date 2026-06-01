@@ -92,7 +92,7 @@ flowchart TD
   E --> F[De-vig + debias 3 gamma scenarios]
   F --> G[Score longshot tail 0.01-0.05]
   G --> H[Depth-walk tail for tradeability]
-  H --> I{conservative edge clears fee AND >=3 tradeable?}
+  H --> I{"conservative edge clears fee AND >=3 tradeable?"}
   I -->|yes| J[Persist flb:eligible_baskets to KV]
 ```
 

@@ -105,7 +105,7 @@ flowchart TD
   I --> K[Monitor fills, mark expected edge]
   J --> K
   K --> L[Recompute total exposure]
-  L --> M{exposure > cap?}
+  L --> M{"exposure > cap?"}
   M -->|yes| N[Trip kill-switch]
   M -->|no| O[Persist state, return]
 ```
