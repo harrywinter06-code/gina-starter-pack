@@ -49,7 +49,7 @@ Workflow submission with artifact at `workflows/volume-tier-trap-filter/referenc
   - `limit` (default 100)
   - `feeBufferBp` (default 50)
   - `minConstituents` (default 3)
-  - `maxAbsDeviation` (default 0.10) — sanity filter on `|sum_yes - 1.0|`
+  - `maxAbsDeviation` (default 0.10), sanity filter on `|sum_yes - 1.0|`
   - `flagshipFloorUsd` (default 1,000,000)
   - `midFloorUsd` (default 100,000)
   - `allowFlagship` (default `true`)
@@ -58,11 +58,11 @@ Workflow submission with artifact at `workflows/volume-tier-trap-filter/referenc
   - `depthSize1`/`2`/`3` (default 50/500/5000)
   - `snapshotPrefix` (default `"voltier:"`)
 - Outputs:
-  - `voltier:latest_breakdown` — full tier × verdict cross-tabulation including dollar shares (KV)
-  - `voltier:latest_surfaced` — tier-allowed real signals (KV) — consumed by `negrisk-maker-executor`
-  - `/workspace/scratch/voltier_filtered.json` — tier-allowed flagged events pre-walk (artifact)
-  - `/workspace/scratch/voltier_classified.json` — post-walk classification (artifact)
-  - `/workspace/scratch/voltier_summary.md` — human-readable summary (artifact)
+  - `voltier:latest_breakdown`, full tier × verdict cross-tabulation including dollar shares (KV)
+  - `voltier:latest_surfaced`, tier-allowed real signals (KV), consumed by `negrisk-maker-executor`
+  - `/workspace/scratch/voltier_filtered.json`, tier-allowed flagged events pre-walk (artifact)
+  - `/workspace/scratch/voltier_classified.json`, post-walk classification (artifact)
+  - `/workspace/scratch/voltier_summary.md`, human-readable summary (artifact)
 - Side effects:
   - reads Polymarket gamma + CLOB/orderbook data
   - writes KV under `voltier:*` namespace and local run artifacts
@@ -74,9 +74,9 @@ Workflow submission with artifact at `workflows/volume-tier-trap-filter/referenc
 
 ## Workflow steps
 
-1. **fetch_and_register** — Same response-shape handling as `negrisk-event-arbitrage-surfacer`: detect `result.table` and use auto-registered name; fall back to manual write+register for inline arrays. Persist table name to `voltier:current_table` KV.
-2. **tier_and_flag** — Read table name from KV. SQL aggregate `sum_yes` + `ev_vol` per `event_slug`. Apply `|sum_yes - 1.0| ≤ maxAbsDeviation` sanity filter. Assign each flagged event to a tier (`flagship` ≥ `flagshipFloorUsd`, `mid` ≥ `midFloorUsd`, else `tail`). Filter by `allowedTiers` config. Persist tier × verdict breakdown and filtered subset to KV + artifact.
-3. **walk_and_surface** — Single SQL fetch of all constituents (no per-event WHERE-clause; same injection-elimination as the surfacer). Group in JS. For each tier-allowed flagged event, walk constituent depth, classify with walk-complete check, persist surfaced real signals to `voltier:latest_surfaced` for downstream consumption.
+1. **fetch_and_register**, Same response-shape handling as `negrisk-event-arbitrage-surfacer`: detect `result.table` and use auto-registered name; fall back to manual write+register for inline arrays. Persist table name to `voltier:current_table` KV.
+2. **tier_and_flag**, Read table name from KV. SQL aggregate `sum_yes` + `ev_vol` per `event_slug`. Apply `|sum_yes - 1.0| ≤ maxAbsDeviation` sanity filter. Assign each flagged event to a tier (`flagship` ≥ `flagshipFloorUsd`, `mid` ≥ `midFloorUsd`, else `tail`). Filter by `allowedTiers` config. Persist tier × verdict breakdown and filtered subset to KV + artifact.
+3. **walk_and_surface**, Single SQL fetch of all constituents (no per-event WHERE-clause; same injection-elimination as the surfacer). Group in JS. For each tier-allowed flagged event, walk constituent depth, classify with walk-complete check, persist surfaced real signals to `voltier:latest_surfaced` for downstream consumption.
 
 ## Execution diagram
 
@@ -109,13 +109,13 @@ flowchart TD
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file, read/write-kv.
 - Scope controls: allowlist host tools per step; avoid wildcard permissions.
-- Read/surface only — no trade execution.
+- Read/surface only, no trade execution.
 - Safe to run on a daily schedule.
 
 ## Evidence
 
 - Source artifact: `workflows/volume-tier-trap-filter/references/volume-tier-trap-filter@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy — Layer 2).
+- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 2).
 - Companion recipe: `recipes/predictions/recipe-volume-tier-trap-filter.md`.
 - Underlying empirical finding: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `MICROSTRUCTURE.md` "Volume-weighted re-analysis" section and `scripts/volume_weighted_trap_rate.py`. 500-event scan, 19/500 flagged. Count-based trap rate 63.2%, dollar-weighted trap rate 0.012%, World Cup `real` event carried 95.9% of $1.15B flagged dollar volume.
 

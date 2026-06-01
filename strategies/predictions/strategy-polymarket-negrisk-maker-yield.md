@@ -136,31 +136,31 @@ flowchart TD
   - writes KV state and local run artifacts
   - may submit Polymarket maker limit orders only when executor's `dryRun: false` AND the operator has uncommented the `managePredictionOrders` lines in the workflow TS AND the risk gate passes AND the kill switch is `armed`
 - Failure modes per layer:
-  - **scanner**: empty result on quiet days (most events will fail the mean-price floor — expected from WORLD_CUP_MM.md's 41/48 negative count), constituent missing `clob_token_ids` (skipped), `getPredictionOrderbook` timeout (constituent excluded from this scan)
+  - **scanner**: empty result on quiet days (most events will fail the mean-price floor, expected from WORLD_CUP_MM.md's 41/48 negative count), constituent missing `clob_token_ids` (skipped), `getPredictionOrderbook` timeout (constituent excluded from this scan)
   - **executor**: kill switch tripped (no new quotes), maker order rejection (held to next tick), stale orderbook on requote attempt (held), Polymarket API outage during open quote (manual operator intervention)
 
 ## Expected economics
 
 Live-verified in Gina's runtime (2026-05-31): scanner `run_mpttawax1t17ar`, executor `run_mpttggw2dy9yh7`; pricing/settlement correctness re-verified at SHA `8adbd73e` (`run_mptv77snkgoqdn` / `run_mptv7vn2ijhfyq` / `run_mptv81dv5ecoc0`).
 
-**Measured-fill reconciliation (load-bearing):** the per-day figures in the table below are **sim-derived** — the scanner's own `captureFraction × spread` model, never realised. A measured backtest against the real Polymarket CLOB trade tape (replacing `captureFraction` with counted real-tape crossings and measured post-fill mid drift) is in [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md). It finds: (a) on the **2 live-eligible** names (France, Spain — not the headline 5), measured adverse selection is **small** (1–24 bp/\$, below the rebate+half-spread buffer), so the favourites filter is vindicated; (b) the sign of net P&L is governed by **queue position**, not AS — at the doc default `captureFraction=0.05` measured net is **~$1/day / ~$387/yr** on ~$200 standing, and the queue-adverse tail is net-negative; (c) the **+100–200% APR headline is a small-base artifact** — the honest figure is the absolute few-hundred-$/year, capacity-bound. Treat the table below as sim-only.
+**Measured-fill reconciliation (load-bearing):** the per-day figures in the table below are **sim-derived**, the scanner's own `captureFraction × spread` model, never realised. A measured backtest against the real Polymarket CLOB trade tape (replacing `captureFraction` with counted real-tape crossings and measured post-fill mid drift) is in [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md). It finds: (a) on the **2 live-eligible** names (France, Spain, not the headline 5), measured adverse selection is **small** (1–24 bp/\$, below the rebate+half-spread buffer), so the favourites filter is vindicated; (b) the sign of net P&L is governed by **queue position**, not AS, at the doc default `captureFraction=0.05` measured net is **~$1/day / ~$387/yr** on ~$200 standing, and the queue-adverse tail is net-negative; (c) the **+100–200% APR headline is a small-base artifact**, the honest figure is the absolute few-hundred-$/year, capacity-bound. Treat the table below as sim-only.
 
 **Critical distinction:** at moderate AS, the strategy is knife-edge per `WORLD_CUP_MM.md`. The eligibility filter shifts the per-constituent set to the structurally-positive subset; the BASKET P&L improves because the long tail is removed.
 
 | metric | value |
 |---|---|
-| Eligible constituents (build-day projection, World Cup) | top 5–10 markets (France, Spain, England, Argentina, Brazil — same as WORLD_CUP_MM.md §67-75) |
-| **50-day projection at moderate AS** (per_day × 50, captureFraction=0.5 baseline) | **+$4,503** (top-5-only; vs +$126 for full 48-market basket — 36× improvement) |
+| Eligible constituents (build-day projection, World Cup) | top 5–10 markets (France, Spain, England, Argentina, Brazil, same as WORLD_CUP_MM.md §67-75) |
+| **50-day projection at moderate AS** (per_day × 50, captureFraction=0.5 baseline) | **+$4,503** (top-5-only; vs +$126 for full 48-market basket, 36× improvement) |
 | 50-day projection at moderate AS, Pack 2 default captureFraction=0.05 | **+$450** (scaled by 10× capture-fraction reduction) |
 | 50-day projection at naive AS, captureFraction=0.5 | ~+$5,500 (rebate only) |
 | 50-day projection at informed AS, captureFraction=0.5 | ~−$3,500 (informed AS, kill-switch attenuates) |
 | Per-day net (moderate AS, captureFraction=0.05) | **~$9** |
 | Standing maker notional required | **$250–500** (5 constituents × $50 × 2 sides; recipe default) |
-| **Headline (measured, real CLOB tape)** | **~$387/yr absolute on ~$200 standing** (`MEASURED_BACKTEST.md`, captureFraction=0.05) — capacity-bound, queue-position-governed; this is the figure to judge Pack 2 by |
-| Sim APR on $500 standing notional, Scenario A | +657% APR — a **small-base artifact** (= $9/day × 365 / $500), NOT scalable and superseded by the measured absolute above; retained only to show the sim/measured gap |
-| Sim banded annualised return | +100 to +200% APR on $250–500 standing notional (10% A + 70% B + 20% C) — sim-only, same small-base caveat |
+| **Headline (measured, real CLOB tape)** | **~$387/yr absolute on ~$200 standing** (`MEASURED_BACKTEST.md`, captureFraction=0.05), capacity-bound, queue-position-governed; this is the figure to judge Pack 2 by |
+| Sim APR on $500 standing notional, Scenario A | +657% APR, a **small-base artifact** (= $9/day × 365 / $500), NOT scalable and superseded by the measured absolute above; retained only to show the sim/measured gap |
+| Sim banded annualised return | +100 to +200% APR on $250–500 standing notional (10% A + 70% B + 20% C), sim-only, same small-base caveat |
 
-**Critical capacity caveat:** Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; at small standing notional ($250–500) the strategy is capacity-unconstrained on the top-5 favourites and produces high APR. At larger standing notional ($5K+), maker queue competition compresses fill rates and APR percentage shrinks even though absolute dollars grow modestly. Pack 2 is best understood as a **small-capital, capacity-bound continuous-yield strategy** — the meaningful figure is the measured few-hundred-$/yr absolute, not the headline percentage — complementing Pack 1's episodic mid-cap basket-arb deployment. They operate at different capital scales and tempos and can be deployed together.
+**Critical capacity caveat:** Pack 2's APR is NOT linearly scalable, it captures flow that crosses our inside-spread quotes; at small standing notional ($250–500) the strategy is capacity-unconstrained on the top-5 favourites and produces high APR. At larger standing notional ($5K+), maker queue competition compresses fill rates and APR percentage shrinks even though absolute dollars grow modestly. Pack 2 is best understood as a **small-capital, capacity-bound continuous-yield strategy**, the meaningful figure is the measured few-hundred-$/yr absolute, not the headline percentage, complementing Pack 1's episodic mid-cap basket-arb deployment. They operate at different capital scales and tempos and can be deployed together.
 
 Full economic model with three AS scenarios, sensitivity tables to capture-fraction assumption, per-constituent breakeven analysis, and honest banded estimate in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 
@@ -168,7 +168,7 @@ Full economic model with three AS scenarios, sensitivity tables to capture-fract
 
 The strategy installs as two independent recipes. Install both for the full pipeline, or just the scanner for research mode.
 
-1. **Scanner** (always install). Use `workflows/negrisk-maker-yield-scanner/references/negrisk-maker-yield-scanner@latest.ts`. Schedule the recipe at `10 14 * * *` UTC. Self-bootstraps the Polymarket events table — no operator setup required.
+1. **Scanner** (always install). Use `workflows/negrisk-maker-yield-scanner/references/negrisk-maker-yield-scanner@latest.ts`. Schedule the recipe at `10 14 * * *` UTC. Self-bootstraps the Polymarket events table, no operator setup required.
 2. **Executor** (only for capital deployment). Use `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`. Schedule at `*/5 * * * *` UTC. Defaults to `dryRun: true` and `notionalPerQuoteUsd: 50` (kept small even in dry-run so any accidental live promotion does not size up; reduce to $25 for first live deployment). Going live requires:
    - Edit the workflow TS to uncomment the `managePredictionOrders` block in `plan_and_quote` step (intentionally commented as a defense-in-depth)
    - Set `dryRun: false` in the recipe inputs
@@ -206,11 +206,11 @@ The strategy installs as two independent recipes. Install both for the full pipe
 ## Evidence
 
 - Verified plug-and-play runs in Gina's actual workflow runtime: scanner `run_mpttawax1t17ar`, executor `run_mpttggw2dy9yh7` (2026-05-31); SHA `8adbd73e` settlement/kill-switch runs `run_mptv7vn2ijhfyq` / `run_mptv81dv5ecoc0`.
-- **Measured-fill backtest (replaces the sim `captureFraction`):** [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md) — real CLOB trade tape, France+Spain; measured net small-positive-but-capacity-bound, queue-adverse tail negative, APR headline is a small-base artifact.
-- Adversarial test pass: [`runs/TEST_RESULTS_MAKER_YIELD.md`](../../runs/TEST_RESULTS_MAKER_YIELD.md) — seven test passes documented
-- Profitability analysis: [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md) — full per-cycle P&L model, three AS scenarios, honest banded annualised estimate
-- Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) — `WORLD_CUP_MM.md`, `polymarket_mm_sim.py`, `REDTEAM.md` §8a
-- Submission status: unverified. The dry-run path is reviewable end-to-end; the live-execution path is intentionally NOT verified — operator responsibility.
+- **Measured-fill backtest (replaces the sim `captureFraction`):** [`runs/backtest/MEASURED_BACKTEST.md`](../../runs/backtest/MEASURED_BACKTEST.md), real CLOB trade tape, France+Spain; measured net small-positive-but-capacity-bound, queue-adverse tail negative, APR headline is a small-base artifact.
+- Adversarial test pass: [`runs/TEST_RESULTS_MAKER_YIELD.md`](../../runs/TEST_RESULTS_MAKER_YIELD.md), seven test passes documented
+- Profitability analysis: [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md), full per-cycle P&L model, three AS scenarios, honest banded annualised estimate
+- Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), `WORLD_CUP_MM.md`, `polymarket_mm_sim.py`, `REDTEAM.md` §8a
+- Submission status: unverified. The dry-run path is reviewable end-to-end; the live-execution path is intentionally NOT verified, operator responsibility.
 
 ## Backlinks
 

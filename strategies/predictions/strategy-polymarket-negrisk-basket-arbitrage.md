@@ -130,7 +130,7 @@ One distinction worth being careful about: the top-of-book gross gap and the dep
 | Depth-walked gross gap at $50/mkt basket | +60 bp |
 | Depth-walked gross gap at $500/mkt basket | **+60 bp (executable basis for taker math)** |
 | Depth-walked gross gap at $5,000/mkt basket | +55 bp |
-| Throttle constituent | New Zealand (max fillable size 0 — empty bid book) |
+| Throttle constituent | New Zealand (max fillable size 0, empty bid book) |
 | Iran-throttled max basket on sell side | ~$48,000 (at ~$3K/mkt before bid book exhausted) |
 | Per-cycle P&L, **taker side**, depth-walked basis (75 bp fee) | **−$86 per $48K cycle (LOSING; taker not viable at this signal)** |
 | Per-cycle P&L, **maker side**, depth-walked-anchored (mod AS) | **+$220** (lower bound, worst-case fill quality) |
@@ -147,7 +147,7 @@ The full model (three scenarios: build-day regime persistence, the polymarket-ed
 
 The strategy installs as three independent recipes. Install all three for the full pipeline, or install just the scanner for research mode.
 
-1. **Scanner** (always install). Use `workflows/negrisk-event-arbitrage-surfacer/references/negrisk-event-arbitrage-surfacer@latest.ts`. Schedule the recipe at `0 14 * * *` UTC. Self-bootstraps the Polymarket events table on every run — no operator setup required. First run produces signal output identical to steady-state.
+1. **Scanner** (always install). Use `workflows/negrisk-event-arbitrage-surfacer/references/negrisk-event-arbitrage-surfacer@latest.ts`. Schedule the recipe at `0 14 * * *` UTC. Self-bootstraps the Polymarket events table on every run, no operator setup required. First run produces signal output identical to steady-state.
 2. **Filter** (recommended). Use `workflows/volume-tier-trap-filter/references/volume-tier-trap-filter@latest.ts`. Schedule at `5 14 * * *` UTC. Same self-bootstrap pattern. Defaults to `allowFlagship: true, allowMid: false, allowTail: false` matching the empirical 0.012% dollar-trap-rate finding.
 3. **Executor** (only for capital deployment). Use `workflows/negrisk-maker-executor/references/negrisk-maker-executor@latest.ts`. Schedule at `*/5 * * * *` UTC. Defaults to `dryRun: true` and `notionalUsdOverride: 0`. Going live requires:
    - Edit the workflow TS to uncomment the `managePredictionOrders` and `closePredictionPosition` blocks (intentionally commented as a defense-in-depth)
@@ -188,13 +188,13 @@ Real signals: 1
 ## Evidence
 
 - Verified plug-and-play runs in Gina's actual workflow runtime:
-  - `run_mpsyz2s9n04sjb` — surfacer (scanner). 11.4s. World Cup at +60 bp net surfaced.
-  - `run_mpsz2ui80f76te` — volume-tier filter. 11.5s. Same World Cup signal classified `[flagship]`, `allowedTiersDollarShare: 1.0`.
-- Build-day dry-run: [`runs/dryrun-negrisk-2026-05-30.log`](../../runs/dryrun-negrisk-2026-05-30.log) — captured live MCP outputs showing the +190→+270 bp deviation and Spain YES depth walk (0 slippage through $5K basket size, $14.76M of ask depth).
-- Adversarial test pass: [`runs/TEST_RESULTS.md`](../../runs/TEST_RESULTS.md) — seven test passes documented including initial validation, red-team, TypeScript parse, live runtime structural, end-to-end with real signal, plug-and-play self-bootstrap, and a pre-send adversarial sweep on the executor that found three additional bugs (signal pipeline wire-up, empty-throttle gate, dryRun P&L anchor).
-- Profitability analysis: [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md) — full per-cycle P&L model, three honest annualised scenarios, and risk-management discussion.
-- Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) — `microstructure.py`, `book_depth.py`, `scripts/volume_weighted_trap_rate.py`, `WORLD_CUP_MM.md`, and `REDTEAM.md` walk-back log.
-- Submission status: unverified. The dry-run path is reviewable end-to-end; the live-execution path is intentionally NOT verified — that's an operator responsibility, not an author claim.
+  - `run_mpsyz2s9n04sjb`, surfacer (scanner). 11.4s. World Cup at +60 bp net surfaced.
+  - `run_mpsz2ui80f76te`, volume-tier filter. 11.5s. Same World Cup signal classified `[flagship]`, `allowedTiersDollarShare: 1.0`.
+- Build-day dry-run: [`runs/dryrun-negrisk-2026-05-30.log`](../../runs/dryrun-negrisk-2026-05-30.log), captured live MCP outputs showing the +190→+270 bp deviation and Spain YES depth walk (0 slippage through $5K basket size, $14.76M of ask depth).
+- Adversarial test pass: [`runs/TEST_RESULTS.md`](../../runs/TEST_RESULTS.md), seven test passes documented including initial validation, red-team, TypeScript parse, live runtime structural, end-to-end with real signal, plug-and-play self-bootstrap, and a pre-send adversarial sweep on the executor that found three additional bugs (signal pipeline wire-up, empty-throttle gate, dryRun P&L anchor).
+- Profitability analysis: [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md), full per-cycle P&L model, three honest annualised scenarios, and risk-management discussion.
+- Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), `microstructure.py`, `book_depth.py`, `scripts/volume_weighted_trap_rate.py`, `WORLD_CUP_MM.md`, and `REDTEAM.md` walk-back log.
+- Submission status: unverified. The dry-run path is reviewable end-to-end; the live-execution path is intentionally NOT verified, that's an operator responsibility, not an author claim.
 
 ## Backlinks
 

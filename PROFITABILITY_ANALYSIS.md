@@ -1,10 +1,10 @@
-# Profitability Analysis — gina-starter-pack
+# Profitability Analysis: gina-starter-pack
 
 Quantitative economic case for the three-layer pipeline. Derived from build-day live observation against the Gina MCP + 12 months of polymarket-edge research + Polymarket fee structure as of 2026-05. Honest about scope: this analysis is what the strategies SHOULD produce under the assumed observation regime, not a verified live-money track record.
 
 ## Executive summary
 
-The pack implements a **structural arbitrage on Polymarket negRisk events** combined with maker-rebate execution. The structural feature: in negRisk events (mutually-exclusive outcome groups where exactly one resolves YES), the sum of YES probabilities must equal $1.00 in fair pricing. Deviations beyond a fee buffer imply tradeable basket arbitrage, conditional on the basket clearing at meaningful per-constituent size — which is what the depth-walk discipline (Layer 1) and dollar-tier filter (Layer 2) jointly verify.
+The pack implements a **structural arbitrage on Polymarket negRisk events** combined with maker-rebate execution. The structural feature: in negRisk events (mutually-exclusive outcome groups where exactly one resolves YES), the sum of YES probabilities must equal $1.00 in fair pricing. Deviations beyond a fee buffer imply tradeable basket arbitrage, conditional on the basket clearing at meaningful per-constituent size, which is what the depth-walk discipline (Layer 1) and dollar-tier filter (Layer 2) jointly verify.
 
 ### Critical distinction: top-of-book gap vs depth-walked executable gap
 
@@ -28,7 +28,7 @@ The build-day World Cup signal had a **top-of-book (TOB) gross gap of +300 bp** 
 
 The headline number that **survived the polymarket-edge year-data audit** (rather than the small-N optimistic projection) is the +6.38% to +13.59% annualised funding-capture confidence interval. The per-cycle World Cup basket P&L is a separate empirically-observed but **not-year-scale-verified** signal. The strategies are designed to be safe regardless of which regime obtains, because the executor defaults to dryRun and has hard risk caps.
 
-## The trade — mechanically
+## The trade: mechanically
 
 A Polymarket negRisk event has **N mutually-exclusive constituent markets**. Exactly one resolves YES (worth $1 at settlement). All others resolve NO ($0). In fair pricing:
 
@@ -99,7 +99,7 @@ The signal got bigger and more durable in 12 months. Same methodology, same venu
 - **Maker per-constituent offset**: 5 bp inside the spread, which sums to 5 bp basket-relative (linear)
 - **Adverse selection cost** (moderate scenario from polymarket-edge `WORLD_CUP_MM.md`): ~0.5× half-spread on a basket of ~50 bp half-spreads = ~25 bp basket-relative per cycle
 
-### Taker-side per-cycle P&L (anchored on depth-walked gap — the definitive case)
+### Taker-side per-cycle P&L (anchored on depth-walked gap: the definitive case)
 
 Takers cross the spread on each leg, walking the orderbook. The basket-aggregate fill price IS the depth-walked sum. There is no scenario in which a taker captures TOB-quality prices across a basket larger than TOB depth.
 
@@ -112,11 +112,11 @@ Per $48,000 basket: $48,000 × −0.18% = −$86
 >>> TAKER IS NOT VIABLE AT THIS SIGNAL <<<
 ```
 
-This is the most important correction in the document. Earlier drafts derived taker P&L from the TOB gap (+300 bp), giving +$936 per cycle. That figure is structurally impossible — a basket trade large enough to deploy meaningful capital walks the book, and the verified depth-walked gap at that scale is only +60 bp, less than the 75 bp Sports fee. **The pack is maker-only by economics, not just by configuration default.** The `makerOnly: true` default in the executor reflects this reality.
+This is the most important correction in the document. Earlier drafts derived taker P&L from the TOB gap (+300 bp), giving +$936 per cycle. That figure is structurally impossible, a basket trade large enough to deploy meaningful capital walks the book, and the verified depth-walked gap at that scale is only +60 bp, less than the 75 bp Sports fee. **The pack is maker-only by economics, not just by configuration default.** The `makerOnly: true` default in the executor reflects this reality.
 
 ### Maker-side per-cycle P&L (bracketed by depth-walked and TOB anchors)
 
-Makers post limit orders inside the spread and wait for counterparties to cross. The maker's avg fill price is at the maker's posted level — not at the depth-walked-decayed level. Real maker fills land somewhere between two anchors depending on counterparty flow:
+Makers post limit orders inside the spread and wait for counterparties to cross. The maker's avg fill price is at the maker's posted level, not at the depth-walked-decayed level. Real maker fills land somewhere between two anchors depending on counterparty flow:
 
 - **Best case (TOB-quality fills):** counterparties cross promptly enough that the maker captures the full TOB gap minus the 5-bp-per-constituent offset.
 - **Worst case (depth-walked-quality fills):** counterparties only cross gradually, and by the time the maker basket is filled the orderbook on either side has decayed to depth-walked-quality prices. Equivalent to having executed as a taker, but with rebate not fee.
@@ -160,7 +160,7 @@ The trade is **net-positive across realistic fill scenarios from ~150 bp TOB gap
 
 ## Capital deployment curve
 
-Single-event focus matches polymarket-edge's 95.9%-of-dollars finding. Capital allocation table uses the **realistic-mix maker P&L (30% TOB / 70% depth-walked, moderate AS)** as the per-cycle anchor. Numbers shown are SCENARIO A (build-day regime persists at year-scale) — the honest banded estimate at the bottom of the document weights this scenario at only 10%.
+Single-event focus matches polymarket-edge's 95.9%-of-dollars finding. Capital allocation table uses the **realistic-mix maker P&L (30% TOB / 70% depth-walked, moderate AS)** as the per-cycle anchor. Numbers shown are SCENARIO A (build-day regime persists at year-scale), the honest banded estimate at the bottom of the document weights this scenario at only 10%.
 
 | capital deployed | basket size cap (Iran-throttled) | expected cycles/day | maker-side per-cycle P&L (realistic mix) | annualised (Scenario A) |
 |---|---|---|---|---|
@@ -168,7 +168,7 @@ Single-event focus matches polymarket-edge's 95.9%-of-dollars finding. Capital a
 | $20,000 | $20,000 | ~2 | ~$240 | **+605% APR** |
 | $48,000 | $48,000 (current max) | ~1 | ~$570 | **+299% APR** |
 | $145,000 | $145,000 (Iran absolute throttle) | < 1 (basket exhausts daily depth) | ~$1,720 | **+99% APR** |
-| $500,000 | n/a — exceeds available depth per event | depth shortage; would need multiple-event diversification | — | — |
+| $500,000 | n/a, exceeds available depth per event | depth shortage; would need multiple-event diversification | — | — |
 
 At small capital ($5–20K) the strategy is capacity-unconstrained but cycle-rate-limited. At larger capital ($48K+) it's depth-constrained on a single event. Diversifying into the **mid-tier events** (Layer 2's `allowMid: true` setting) would extend capacity but at higher trap rate.
 
@@ -188,13 +188,13 @@ At small capital ($5–20K) the strategy is capacity-unconstrained but cycle-rat
 | Capital efficiency | strong (instant deployment) | moderate (lock-up during fill) |
 | Build-day per-cycle net P&L on $48K basket | **−$86 (LOSING)** | **+$220 to +$1,386 (realistic mix ~$570)** |
 
-The maker advantage is real and structural at this signal level. The workflow's `makerOnly: true` default means: if maker fills cannot be obtained within a reasonable timeframe, the workflow **holds** rather than crossing to taker. This is not just AS protection — at the depth-walked-anchored gap (+57 bp gross), the taker side is mathematically a losing trade after Sports fees. Maker-only is a hard economic constraint, not a defensive preference.
+The maker advantage is real and structural at this signal level. The workflow's `makerOnly: true` default means: if maker fills cannot be obtained within a reasonable timeframe, the workflow **holds** rather than crossing to taker. This is not just AS protection, at the depth-walked-anchored gap (+57 bp gross), the taker side is mathematically a losing trade after Sports fees. Maker-only is a hard economic constraint, not a defensive preference.
 
 ## Annualised return scenarios
 
 Three honest scenarios, accounting for what survived the polymarket-edge year-data audit vs what didn't:
 
-### Scenario A — "Build-day regime continues at scale"
+### Scenario A: "Build-day regime continues at scale"
 
 Assumes the World Cup-style flagship event continues to have +300 bp average TOB gaps (+57 bp depth-walked) and 1–3 cycles/day capability with realistic-mix fill quality.
 
@@ -204,9 +204,9 @@ Assumes the World Cup-style flagship event continues to have +300 bp average TOB
 - Daily P&L: $570
 - Annualised: **~+299% APR**
 
-**Assessment**: optimistic — assumes the small-N build-day observation continues at year-scale AND that fill realization stays at the 30/70 TOB/depth-walked mix. polymarket-edge's year-data audit specifically walked back claims that depended on small-N (negative-funding-extreme contrarian, +72% low-vol regime). This scenario is **not what would survive a polymarket-edge-style year-data audit**.
+**Assessment**: optimistic, assumes the small-N build-day observation continues at year-scale AND that fill realization stays at the 30/70 TOB/depth-walked mix. polymarket-edge's year-data audit specifically walked back claims that depended on small-N (negative-funding-extreme contrarian, +72% low-vol regime). This scenario is **not what would survive a polymarket-edge-style year-data audit**.
 
-### Scenario B — "polymarket-edge year-data range applies"
+### Scenario B: "polymarket-edge year-data range applies"
 
 Assumes the +6.38% to +13.59% annualised funding-capture CI is the right band for the strategy's actual deployable return.
 
@@ -214,9 +214,9 @@ Assumes the +6.38% to +13.59% annualised funding-capture CI is the right band fo
 - Annualised: **+6.38% to +13.59%** (~$3,000–$6,500/year)
 - Risk-adjusted Sharpe (per polymarket-edge year-data): ~3 at biweekly cadence
 
-**Assessment**: this is the **survived-year-data version** of the underlying signal. Much smaller than Scenario A but defensibly anchored in walk-forward validation against 365 days of data. Note this is the **funding-capture-on-Hyperliquid** number from polymarket-edge, not the negRisk basket arb specifically — there is no direct year-scale Polymarket basket-arb backtest in polymarket-edge because the 12h-granularity historical floor on Polymarket made it infeasible.
+**Assessment**: this is the **survived-year-data version** of the underlying signal. Much smaller than Scenario A but defensibly anchored in walk-forward validation against 365 days of data. Note this is the **funding-capture-on-Hyperliquid** number from polymarket-edge, not the negRisk basket arb specifically, there is no direct year-scale Polymarket basket-arb backtest in polymarket-edge because the 12h-granularity historical floor on Polymarket made it infeasible.
 
-### Scenario C — "Maker-yield-only, AS-aware"
+### Scenario C: "Maker-yield-only, AS-aware"
 
 Assumes the strategy operates purely as a maker on flagship events (skipping the basket arb detection entirely), at the polymarket-edge `WORLD_CUP_MM.md` moderate-AS scenario.
 
@@ -258,7 +258,7 @@ Weighted annualised = 0.1 × 115% + 0.7 × 10% + 0.2 × 0.3%
 |---|---|
 | Single-event concentration | Default capital allocation is per-event with `maxCapitalPerEventUsd: 5000`. Operator can widen tier filter (Layer 2 `allowMid: true`) to diversify. |
 | Adverse selection on maker fills | `makerOnly: true` default + maker limit price offset 5 bp from best bid/ask. Worst-case: workflow holds rather than crosses spread. |
-| Stuck positions (basket doesn't converge) | `closeBandBp: 25` default — close at any time when within 25 bp of fair, even if the gap hasn't fully closed. Timeout fallback documented but not auto-implemented (operator wires). |
+| Stuck positions (basket doesn't converge) | `closeBandBp: 25` default, close at any time when within 25 bp of fair, even if the gap hasn't fully closed. Timeout fallback documented but not auto-implemented (operator wires). |
 | Daily loss runaway | Auto-tripping kill-switch on `maxDailyLossUsd: 200` breach. No further orders until operator resets `executor:kill_switch_state`. |
 | Capital concentration | `maxDailyNotionalUsd: 20000` cap on total notional opened per day. Cannot exceed this regardless of signal count. |
 | Going-live by accident | Defense-in-depth: `dryRun: true` default + `notionalUsdOverride: 0` first-live throttle + the `managePredictionOrders` / `closePredictionPosition` submission lines are intentionally COMMENTED in the as-shipped workflow TS. Going live requires explicit, traceable, version-controllable edits to multiple lines. |
@@ -271,16 +271,16 @@ Weighted annualised = 0.1 × 115% + 0.7 × 10% + 0.2 × 0.3%
 - **Maker fill realization rate is the second biggest unknown.** The realistic-mix 30/70 TOB-to-depth-walked split is an educated guess from polymarket-edge `WORLD_CUP_MM.md` order arrival modelling, not a measured rate from Polymarket Sports basket fills. Real fill rates could be materially worse (basket fills entirely at depth-walked quality during liquid windows) or better (basket fills at TOB quality during illiquid windows). The per-cycle numbers in this document should be read as a 6× range, not a point estimate.
 - **Cycles-per-day estimate of 1–3 is empirical from polymarket-edge daily-observation work, not statistically validated.** Real-world cycle rate depends on Polymarket flow heterogeneity, event resolution timelines, and competing arb activity. Could be lower in periods of competitive arb activity (gap closes quickly), higher in periods of unusual flow (gap opens repeatedly).
 - **The depth-walking work is single-snapshot per build day.** A year-scale year-of-depth-walks dataset doesn't exist (Polymarket's 12h-granularity historical floor for resolved markets makes per-cycle backtesting infeasible). The forward-observation `monitor` work in polymarket-edge captured a small persistence signal but is also small-N.
-- **Adverse-selection assumption (moderate = 0.5× half-spread) is the literature standard but not Polymarket-specific.** Real Polymarket flow may be more or less informed than this assumption. The `WORLD_CUP_MM.md` analysis shows breakeven at half-spread = 0.505, which is right at this assumption — moving either way materially changes the maker-side P&L.
-- **The execution-path code (`managePredictionOrders` and `closePredictionPosition` calls) is stubbed in the as-shipped workflow.** Going live requires an operator to uncomment these lines AND set `dryRun: false`. This is intentional defense-in-depth — without it, the maker yield projections above are theoretical only.
+- **Adverse-selection assumption (moderate = 0.5× half-spread) is the literature standard but not Polymarket-specific.** Real Polymarket flow may be more or less informed than this assumption. The `WORLD_CUP_MM.md` analysis shows breakeven at half-spread = 0.505, which is right at this assumption, moving either way materially changes the maker-side P&L.
+- **The execution-path code (`managePredictionOrders` and `closePredictionPosition` calls) is stubbed in the as-shipped workflow.** Going live requires an operator to uncomment these lines AND set `dryRun: false`. This is intentional defense-in-depth, without it, the maker yield projections above are theoretical only.
 - **The pack has not been backtested against a year of resolved Polymarket negRisk events at the basket level.** The closest validation is the polymarket-edge `monitor` forward-observation work plus the World Cup MM simulator, both of which are smaller-N than ideal. A formal year-scale basket-arb backtest is the most valuable next step a researcher could take on this signal.
 
 ## References
 
-- [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) — full repo with sensitivity analysis, walk-back log, 326 CI'd tests.
-- polymarket-edge `MICROSTRUCTURE.md` — the depth-aware classifier methodology + count-vs-dollar reframe.
-- polymarket-edge `WORLD_CUP_MM.md` — the maker yield projection at three adverse-selection scenarios.
-- polymarket-edge `REDTEAM.md` §7a — the volume-weighted re-analysis that revealed the count-vs-dollar disagreement.
-- polymarket-edge `REDTEAM.md` §9 — the year-data audit that walked back small-N findings.
-- `runs/dryrun-negrisk-2026-05-30.log` — live build-day capture against the Gina MCP showing the World Cup +190 → +270 bp deviation and the Spain YES depth walk.
-- `runs/TEST_RESULTS.md` — adversarial test pass on the workflow TS files.
+- [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), full repo with sensitivity analysis, walk-back log, 326 CI'd tests.
+- polymarket-edge `MICROSTRUCTURE.md`, the depth-aware classifier methodology + count-vs-dollar reframe.
+- polymarket-edge `WORLD_CUP_MM.md`, the maker yield projection at three adverse-selection scenarios.
+- polymarket-edge `REDTEAM.md` §7a, the volume-weighted re-analysis that revealed the count-vs-dollar disagreement.
+- polymarket-edge `REDTEAM.md` §9, the year-data audit that walked back small-N findings.
+- `runs/dryrun-negrisk-2026-05-30.log`, live build-day capture against the Gina MCP showing the World Cup +190 → +270 bp deviation and the Spain YES depth walk.
+- `runs/TEST_RESULTS.md`, adversarial test pass on the workflow TS files.

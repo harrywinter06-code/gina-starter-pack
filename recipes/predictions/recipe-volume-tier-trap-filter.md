@@ -59,8 +59,8 @@ Implements the count-vs-dollar reframe from the underlying polymarket-edge resea
   - allowTail: false
   - depth sizes 50/500/5000
 - Outputs:
-  - `voltier:latest_breakdown` — full tier × verdict cross-tabulation including `allowedTiersDollarShare`
-  - `voltier:latest_surfaced` — tier-allowed real signals
+  - `voltier:latest_breakdown`, full tier × verdict cross-tabulation including `allowedTiersDollarShare`
+  - `voltier:latest_surfaced`, tier-allowed real signals
   - run artifacts at `/workspace/scratch/voltier_filtered.json`, `voltier_classified.json`, `voltier_summary.md`
 - Side effects:
   - reads Polymarket gamma + CLOB/orderbook data
@@ -125,7 +125,7 @@ Then return:
 ## Security and permissions
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file.
-- Read/surface only — no trade execution.
+- Read/surface only, no trade execution.
 - Safe to run on a daily schedule.
 - Do not persist Privy tokens, raw secret-bearing provider logs, or auth headers in artifacts.
 

@@ -1,4 +1,4 @@
-# Profitability Analysis — Pack 2: NegRisk Maker Yield
+# Profitability Analysis, Pack 2: NegRisk Maker Yield
 
 Quantitative economic case for the maker-yield strategy. Derived from build-day live observation against the Gina MCP + polymarket-edge `WORLD_CUP_MM.md` empirical baseline + Polymarket fee structure as of 2026-05. Honest about scope: this analysis is what the strategy SHOULD produce under the assumed observation regime, not a verified live-money track record.
 
@@ -6,15 +6,15 @@ Quantitative economic case for the maker-yield strategy. Derived from build-day 
 
 Pack 2 ports the maker-rebate yield analysis from polymarket-edge `WORLD_CUP_MM.md` and refines it with a depth-walk-derived eligibility filter that excludes the long-tail of net-negative constituent markets. The structural feature: at Polymarket Sports' 18.75 bp maker rebate, the basket clears positive only on constituents where `quote_half_spread_fraction ≤ 0.00375` (moderate-AS breakeven from `polymarket_mm_sim.py`).
 
-**Honest framing on APR percentage**: Pack 2 produces absolute-dollar yield in the **$100–3,000/year range on $250–500 standing maker notional**, depending on `captureFraction` realisation and constituent flow. The APR-percentage figures cited below (100–200% banded, 657% best-case) are arithmetic consequences of dividing modest absolute returns by a small standing-notional base — they are not a deploy-at-scale opportunity. Pack 2 is structurally a small-capital high-turnover-yield strategy; the meaningful planning figure is the absolute dollar range, not the APR percentage.
+**Honest framing on APR percentage**: Pack 2 produces absolute-dollar yield in the **$100–3,000/year range on $250–500 standing maker notional**, depending on `captureFraction` realisation and constituent flow. The APR-percentage figures cited below (100–200% banded, 657% best-case) are arithmetic consequences of dividing modest absolute returns by a small standing-notional base, they are not a deploy-at-scale opportunity. Pack 2 is structurally a small-capital high-turnover-yield strategy; the meaningful planning figure is the absolute dollar range, not the APR percentage.
 
-> ## ⚠ Measured-fill reconciliation (added after the sim — read this first)
+> ## ⚠ Measured-fill reconciliation (added after the sim, read this first)
 >
 > **Every number below this box is sim-derived**: the scanner's own `captureFraction × spread` model, never realised against fills. A measured backtest now replaces `captureFraction` with counted crossings of the strategy's actual posted quotes against the **real Polymarket CLOB trade tape** for the live-eligible constituents, plus measured post-fill mid drift for adverse selection. Full method, falsifier, and code: [`runs/backtest/MEASURED_BACKTEST.md`](runs/backtest/MEASURED_BACKTEST.md).
 >
 > Measured findings (France + Spain, ~6-day tape, 2026-05):
-> - **Net per filled dollar is robustly positive** (+38 to +47 bp/\$ optimistic-fill across 5–120 min markout) and **measured adverse selection is small** (1–24 bp/\$) — well under the ~47 bp rebate (18.75 bp) + structural half-spread (≈27 bp on a 1-tick 17¢ book) buffer. The fear that AS dominates the favourites maker is **not** borne out; the mean-price≥0.15 filter is vindicated.
-> - **The sign of net P&L is governed by queue position, not AS** — i.e. `captureFraction` re-expressed. Under a queue-adverse "sweep" fill model (fills only when the level breaks through us), net is **negative** (−12 to −41 bp/\$). The strategy only *joins* the touch (no price improvement), so realistic capture sits below the optimistic bound.
+> - **Net per filled dollar is robustly positive** (+38 to +47 bp/\$ optimistic-fill across 5–120 min markout) and **measured adverse selection is small** (1–24 bp/\$), well under the ~47 bp rebate (18.75 bp) + structural half-spread (≈27 bp on a 1-tick 17¢ book) buffer. The fear that AS dominates the favourites maker is **not** borne out; the mean-price≥0.15 filter is vindicated.
+> - **The sign of net P&L is governed by queue position, not AS**, i.e. `captureFraction` re-expressed. Under a queue-adverse "sweep" fill model (fills only when the level breaks through us), net is **negative** (−12 to −41 bp/\$). The strategy only *joins* the touch (no price improvement), so realistic capture sits below the optimistic bound.
 > - At the doc default `captureFraction = 0.05`, measured net ≈ **$1.06/day → ~$387/yr** on the ~$200 standing notional of the **2 names that actually clear live** (not the headline 5). This is inside the "$100–3,000/yr" range stated above; **the +100–200% APR figure survives only as a small-base artifact** on trivial absolute dollars.
 > - **Verdict: scope-down.** Real but small, capacity-bound, sign-sensitive to an unmeasured queue assumption. Honest headline = the absolute few-hundred-\$/year, **not** the APR percentage. Do not allocate material capital on the APR.
 
@@ -44,9 +44,9 @@ Pack 2's eligibility filter (mean_price ≥ 0.15 AND quote_half_spread_fraction 
 
 The filter shifts the basket's economic profile from "knife-edge with massive informed-AS tail risk" to "+$4,503 moderate-AS 50-day projection with bounded downside via kill-switch."
 
-> **Live-data caveat (2026-05-31 verification).** The "top-5 / 5 of 5" basket above is the WORLD_CUP_MM.md methodological subset (France, Spain, England, Argentina, Brazil) and the projection numbers are unchanged from that methodology. When the scanner was run **live** on 2026-05-31 (run `run_mpttawax1t17ar`), only **2** of those five — France and Spain — actually cleared the eligibility filter on that day's order book. The binding constraint was the `mean_price ≥ 0.15` floor, not the spread: England/Argentina/Brazil were priced at 0.086–0.113 (below 0.15) on the day, so they failed the price floor regardless of spread. The 50-day projection figures here are therefore a *methodological* basket projection, **not** a claim that five constituents are eligible on any given day. On a typical day the live eligible set may be 2–5 constituents depending on how many favourites sit above the 15¢ floor; size expectations accordingly. The economics scale roughly linearly in the number of eligible constituents, so a 2-constituent live basket implies ~2/5 of the tabulated basket figures.
+> **Live-data caveat (2026-05-31 verification).** The "top-5 / 5 of 5" basket above is the WORLD_CUP_MM.md methodological subset (France, Spain, England, Argentina, Brazil) and the projection numbers are unchanged from that methodology. When the scanner was run **live** on 2026-05-31 (run `run_mpttawax1t17ar`), only **2** of those five, France and Spain, actually cleared the eligibility filter on that day's order book. The binding constraint was the `mean_price ≥ 0.15` floor, not the spread: England/Argentina/Brazil were priced at 0.086–0.113 (below 0.15) on the day, so they failed the price floor regardless of spread. The 50-day projection figures here are therefore a *methodological* basket projection, **not** a claim that five constituents are eligible on any given day. On a typical day the live eligible set may be 2–5 constituents depending on how many favourites sit above the 15¢ floor; size expectations accordingly. The economics scale roughly linearly in the number of eligible constituents, so a 2-constituent live basket implies ~2/5 of the tabulated basket figures.
 
-**Critical capacity caveat:** WORLD_CUP_MM.md's per-day rates are based on capturing `captureFraction = 0.5` of observed trade flow — being the SOLE maker on each market. Pack 2 defaults to `captureFraction = 0.05` (10x more conservative) because (a) the workflow runtime cannot validate higher rates without historical trade data, and (b) real maker queues are competitive. Pack 2's expected per-day net is therefore **~$9/d** (= $90/d × 0.1), not $90/d.
+**Critical capacity caveat:** WORLD_CUP_MM.md's per-day rates are based on capturing `captureFraction = 0.5` of observed trade flow, being the SOLE maker on each market. Pack 2 defaults to `captureFraction = 0.05` (10x more conservative) because (a) the workflow runtime cannot validate higher rates without historical trade data, and (b) real maker queues are competitive. Pack 2's expected per-day net is therefore **~$9/d** (= $90/d × 0.1), not $90/d.
 
 ### Headline planning figure
 
@@ -54,15 +54,15 @@ The filter shifts the basket's economic profile from "knife-edge with massive in
 |---|---|
 | **Per-day net (moderate AS, eligibility-filtered, captureFraction=0.05)** | **+$9/d** |
 | **50-day projection at Pack 2 default captureFraction** | **+$450** |
-| **50-day projection at WORLD_CUP_MM.md captureFraction=0.5** | **+$4,503** (upper bound — assumes sole-maker on top-5) |
+| **50-day projection at WORLD_CUP_MM.md captureFraction=0.5** | **+$4,503** (upper bound, assumes sole-maker on top-5) |
 | **Standing maker notional required** | **~$250–500** (5 constituents × $50 per side × 2 sides; recipe default) |
 | **Annual gross at Pack 2 default** | **~$3,285** ($9/d × 365) |
 | **APR on standing notional** | **+650–1,300% APR** on $250–500 (capacity-constrained: cannot 10x by simply deploying 10x capital) |
-| **Honest banded annualised return** | **+200% to +800% APR on small standing notional ($250–1000)** — strategy is structurally capacity-constrained, NOT scalable to Pack 1's $48K-class deployment |
+| **Honest banded annualised return** | **+200% to +800% APR on small standing notional ($250–1000)**, strategy is structurally capacity-constrained, NOT scalable to Pack 1's $48K-class deployment |
 
-**Pack 2 is structurally a SMALL-CAPITAL high-APR strategy.** It is NOT directly comparable to Pack 1's per-cycle P&L on $48K capital. Pack 2's economics depend on the capture-fraction × standing-notional × turnover relationship — at small standing notional (recipe default ~$500), the strategy is capacity-unconstrained and produces high APR on a tiny base. At larger standing notional, capacity bottlenecks dominate (you cannot capture flow that doesn't exist). Pack 1 + Pack 2 are complementary across capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional.
+**Pack 2 is structurally a SMALL-CAPITAL high-APR strategy.** It is NOT directly comparable to Pack 1's per-cycle P&L on $48K capital. Pack 2's economics depend on the capture-fraction × standing-notional × turnover relationship, at small standing notional (recipe default ~$500), the strategy is capacity-unconstrained and produces high APR on a tiny base. At larger standing notional, capacity bottlenecks dominate (you cannot capture flow that doesn't exist). Pack 1 + Pack 2 are complementary across capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional.
 
-## The trade — mechanically
+## The trade: mechanically
 
 A maker on a Polymarket negRisk constituent posts **two-sided limit orders** inside the bid-ask spread:
 - BUY limit at `bestBid + 5 bp` (improving the bid; snapped to the market tick and clamped so it never reaches bestAsk)
@@ -104,9 +104,9 @@ Pack 2's scanner computes this per constituent and surfaces only those where mod
 
 `WORLD_CUP_MM.md` (§95–96) explicitly flagged: *"AS model is the load-bearing assumption. Realised price drift is a proxy for spread, not the spread itself. A true bid-ask spread series would give a tighter estimate."*
 
-Pack 2 uses the **actual quoted bid-ask half-spread** derived from `getPredictionOrderbook` at $50 size — this is the spread the maker pays to post inside, directly observable from the workflow runtime. The drift-based proxy is replaced by the directly-measured quantity.
+Pack 2 uses the **actual quoted bid-ask half-spread** derived from `getPredictionOrderbook` at $50 size, this is the spread the maker pays to post inside, directly observable from the workflow runtime. The drift-based proxy is replaced by the directly-measured quantity.
 
-**Theoretical caveat:** In competitive market-making equilibrium, bid-ask spread ≈ 2 × adverse-selection cost. Both the drift proxy and the depth-walked spread converge to true AS in equilibrium, but on rebate-positive venues like Polymarket Sports, makers may post tighter than AS-breakeven (rebate subsidises sustainable AS coverage). This biases the depth-walked spread slightly LOW as an AS estimate — flagging some constituents as eligible when realised AS exceeds the spread estimate. The three-scenario reporting (naive/moderate/informed) brackets this uncertainty rather than committing to a single point estimate.
+**Theoretical caveat:** In competitive market-making equilibrium, bid-ask spread ≈ 2 × adverse-selection cost. Both the drift proxy and the depth-walked spread converge to true AS in equilibrium, but on rebate-positive venues like Polymarket Sports, makers may post tighter than AS-breakeven (rebate subsidises sustainable AS coverage). This biases the depth-walked spread slightly LOW as an AS estimate, flagging some constituents as eligible when realised AS exceeds the spread estimate. The three-scenario reporting (naive/moderate/informed) brackets this uncertainty rather than committing to a single point estimate.
 
 ## Per-cycle P&L model
 
@@ -134,7 +134,7 @@ For Spain YES (build-day estimate, $14.76M ask depth, mean_price 0.18, half-spre
 Per cycle moderate-AS net ≈ $52 × (0.001875 − 0.5 × 0.0044) = $52 × −0.00033 = −$0.017/cycle
 ```
 
-Hmm — Spain at $0.18 mean price with 8 bp half-spread = 0.0044 spread_fraction. That FAILS the eligibility filter (max 0.00375). So under Pack 2, Spain might actually be filtered out — only the tightest-spread favourites (France, England) make the cut.
+Hmm, Spain at $0.18 mean price with 8 bp half-spread = 0.0044 spread_fraction. That FAILS the eligibility filter (max 0.00375). So under Pack 2, Spain might actually be filtered out, only the tightest-spread favourites (France, England) make the cut.
 
 This is a critical Phase C verification target: **does the eligibility filter at 0.00375 actually pass through the WORLD_CUP_MM.md top-5? Or is it too strict and produces near-empty output?**
 
@@ -142,7 +142,7 @@ This is a critical Phase C verification target: **does the eligibility filter at
 
 The breakeven is exact: at moderate AS (0.5), breakeven spread_fraction = rebate / 0.5 = 0.00375. At informed AS (1.0), breakeven = 0.001875 (very tight).
 
-If we relax the filter to capture markets that are positive at NAIVE AS only (no AS cost), the filter becomes `spread_fraction ≤ ∞` — i.e., the filter would be defunct. So the eligibility filter at moderate-AS-breakeven is the right anchor.
+If we relax the filter to capture markets that are positive at NAIVE AS only (no AS cost), the filter becomes `spread_fraction ≤ ∞`, i.e., the filter would be defunct. So the eligibility filter at moderate-AS-breakeven is the right anchor.
 
 Alternative: relax to half-spread-fraction ≤ 0.005 (1.33× moderate-AS-breakeven) and accept that some eligible markets will be net-negative at strict moderate AS. This widens the basket but introduces post-hoc selection risk.
 
@@ -179,7 +179,7 @@ These are SCENARIO A numbers (build-day regime persists at year-scale). Banded h
 
 Three honest scenarios, accounting for what survived the polymarket-edge year-data audit vs what didn't:
 
-### Scenario A — "Build-day regime continues at scale + small standing notional"
+### Scenario A: "Build-day regime continues at scale + small standing notional"
 
 Assumes the eligibility filter passes through 5 constituents continuously, capture-fraction holds at 0.05, AS stays moderate, and standing notional is at recipe default (~$500).
 
@@ -187,11 +187,11 @@ Assumes the eligibility filter passes through 5 constituents continuously, captu
 - Per-day moderate-AS net: ~$9
 - Annualised (365 days): $9 × 365 / $500 = **+657% APR on small base**
 
-The APR is huge because the base is small. The strategy is capacity-unconstrained at this scale — actual fills depend on how much flow crosses our inside-spread quotes.
+The APR is huge because the base is small. The strategy is capacity-unconstrained at this scale, actual fills depend on how much flow crosses our inside-spread quotes.
 
-**Assessment**: optimistic — assumes (a) capture-fraction at 0.05 holds (could be much lower in competitive maker queues), (b) the eligibility filter passes through 5 constituents continuously, (c) AS stays at moderate, (d) every refresh cycle gets crossed. Realistic Scenario A is probably half this (+300% APR on ~$500 standing). polymarket-edge's year-data audit specifically walked back claims that depended on small-N. This scenario is **not what would survive a polymarket-edge-style year-data audit**.
+**Assessment**: optimistic, assumes (a) capture-fraction at 0.05 holds (could be much lower in competitive maker queues), (b) the eligibility filter passes through 5 constituents continuously, (c) AS stays at moderate, (d) every refresh cycle gets crossed. Realistic Scenario A is probably half this (+300% APR on ~$500 standing). polymarket-edge's year-data audit specifically walked back claims that depended on small-N. This scenario is **not what would survive a polymarket-edge-style year-data audit**.
 
-### Scenario B — "polymarket-edge year-data range applies, eligibility filter holds at moderate efficacy"
+### Scenario B: "polymarket-edge year-data range applies, eligibility filter holds at moderate efficacy"
 
 Apply the same filter but assume capture-fraction is half (0.025, more competitive maker queue) and AS scenario varies between moderate (0.5) and slightly informed (0.7).
 
@@ -201,7 +201,7 @@ Apply the same filter but assume capture-fraction is half (0.025, more competiti
 
 **Assessment**: this is the **moderate-confidence year-scale version**. The filter still cuts the long tail; capture-fraction realised is lower than Scenario A; AS scenarios mix moderate-to-informed.
 
-### Scenario C — "Maker yield fully competed out + informed AS"
+### Scenario C: "Maker yield fully competed out + informed AS"
 
 Assumes makers compete the rebate down via tight quoting + AS scenario shifts to informed (1.0 × half-spread).
 
@@ -234,7 +234,7 @@ Weighted = 0.1 × 328 + 0.7 × 109 + 0.2 × (−35)
 | Worst-case (Scenario C informed AS, kill-switch attenuated) | **−35% APR** |
 | Sharpe at deployable cadence | **<2** (moderate; capacity-constrained variance) |
 
-**Critical scaling caveat:** these APR figures are **NOT linearly scalable**. Pack 2 captures flow that crosses our inside-spread quotes; at $500 standing notional, this might be $1–5K of fills per day. At $5,000 standing notional, the maker queue gets longer (other makers also quoting), capture-fraction drops, and APR percentage shrinks even though absolute dollar P&L grows modestly. Pack 2 is best understood as a **small-capital, high-APR continuous yield strategy** — not a deploy-at-scale alternative to Pack 1.
+**Critical scaling caveat:** these APR figures are **NOT linearly scalable**. Pack 2 captures flow that crosses our inside-spread quotes; at $500 standing notional, this might be $1–5K of fills per day. At $5,000 standing notional, the maker queue gets longer (other makers also quoting), capture-fraction drops, and APR percentage shrinks even though absolute dollar P&L grows modestly. Pack 2 is best understood as a **small-capital, high-APR continuous yield strategy**, not a deploy-at-scale alternative to Pack 1.
 
 **Comparison to Pack 1:** Pack 1 deploys $10K–$48K of episodic basket-arb capital at +15–40% banded APR (~$1.5K–$19K/year). Pack 2 deploys $250–$1000 of standing maker notional at +100–200% banded APR (~$250–$2000/year). The two strategies operate at different capital scales and tempos. Combined deployment: Pack 1 on $48K + Pack 2 on $500 = ~$2K–$21K combined annual yield, with Pack 1 carrying the majority and Pack 2 adding continuous baseline.
 
@@ -261,10 +261,10 @@ Weighted = 0.1 × 328 + 0.7 × 109 + 0.2 × (−35)
 
 ## References
 
-- [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) — full repo with sensitivity analysis, walk-back log, 326 CI'd tests.
-- polymarket-edge `WORLD_CUP_MM.md` — the maker yield projection at three adverse-selection scenarios (Pack 2's port baseline).
-- polymarket-edge `src/polymarket_edge/polymarket_mm_sim.py` — `estimate_half_spread`, `simulate_market_maker`, `breakeven_half_spread_fraction` (the analytic core ported to JS in this pack).
-- polymarket-edge `REDTEAM.md` §8a — the maker-yield walk-back disclosure.
-- `runs/TEST_RESULTS_MAKER_YIELD.md` — adversarial test pass on the Pack 2 workflow TS files.
-- `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md` — strategy MD with bundle map and capability contract.
-- `PROFITABILITY_ANALYSIS.md` — Pack 1's economic model for comparison.
+- [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), full repo with sensitivity analysis, walk-back log, 326 CI'd tests.
+- polymarket-edge `WORLD_CUP_MM.md`, the maker yield projection at three adverse-selection scenarios (Pack 2's port baseline).
+- polymarket-edge `src/polymarket_edge/polymarket_mm_sim.py`, `estimate_half_spread`, `simulate_market_maker`, `breakeven_half_spread_fraction` (the analytic core ported to JS in this pack).
+- polymarket-edge `REDTEAM.md` §8a, the maker-yield walk-back disclosure.
+- `runs/TEST_RESULTS_MAKER_YIELD.md`, adversarial test pass on the Pack 2 workflow TS files.
+- `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md`, strategy MD with bundle map and capability contract.
+- `PROFITABILITY_ANALYSIS.md`, Pack 1's economic model for comparison.

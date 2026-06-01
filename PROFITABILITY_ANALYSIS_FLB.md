@@ -1,4 +1,4 @@
-# Pack 3 — Favourite-Longshot Bias Harvest: Profitability Analysis
+# Pack 3, Favourite-Longshot Bias Harvest: Profitability Analysis
 
 I've put the loss leg and the honest denominator first on purpose. The natural way to frame this
 strategy, "% edge on shorted notional," flatters it and misleads, so I'd rather you find the worst case
@@ -30,8 +30,8 @@ than the nickel, which is exactly the FLB claim, and exactly the part this venue
 
 | denominator | value (central gamma) | why it is/ isn't honest |
 |---|---|---|
-| edge / shorted notional (sum of yes_price ~ $0.18) | **+13.5%** | flattering — the shorted notional is a tiny number; it is NOT the capital at risk |
-| edge / collateral deployed (sum of no_price ~ $9.82) | **+0.24% over ~46 days** | honest — this is the capital you actually tie up |
+| edge / shorted notional (sum of yes_price ~ $0.18) | **+13.5%** | flattering, the shorted notional is a tiny number; it is NOT the capital at risk |
+| edge / collateral deployed (sum of no_price ~ $9.82) | **+0.24% over ~46 days** | honest, this is the capital you actually tie up |
 
 Because each short ties up close to full collateral, the honest number is return on collateral, and it's
 small. Annualising the ~46-day hold:

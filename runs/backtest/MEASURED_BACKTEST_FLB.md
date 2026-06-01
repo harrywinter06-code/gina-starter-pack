@@ -1,4 +1,4 @@
-# Measured FLB backtest — real Polymarket resolved-negRisk outcomes
+# Measured FLB backtest: real Polymarket resolved-negRisk outcomes
 
 This swaps Pack 3's hand-set `gamma` for the measured thing: on the real settled-outcome
 tape, does the longshot tail actually resolve YES less often than its price implied? Run
@@ -29,7 +29,7 @@ since longshots lose 95–99% of the time whether they're mispriced or not. A 90
 (resampling names) that crosses 0 means there's nothing measurable there. And the harness did
 print losses (−0.85 at 24h, −3.67 at 168h), so it can clearly say "this loses money."
 
-## Result — calibration at the tail (price − realized, in probability points)
+## Result: calibration at the tail (price − realized, in probability points)
 
 Sign convention (same as the replay table below): **positive = realized YES BELOW price =
 overpriced = short-favorable (FLB); negative = realized ABOVE price = reverse**.
@@ -48,7 +48,7 @@ At the **extreme tail (<0.01)** miscalib is consistently **negative** (realized 
 **0.01–0.05 band the sign is unstable** across horizons and small in magnitude. Whatever mild
 FLB exists (positive) sits in the **mid band 0.10–0.50**, outside this strategy's tail.
 
-## Result — tail-short replay (real outcomes, per 1 unit/name)
+## Result: tail-short replay (real outcomes, per 1 unit/name)
 
 | config | n | mean price | realized win-rate | miscalib | realized NET | net/$ collateral | 90% bootstrap CI |
 |---|---|---|---|---|---|---|---|

@@ -124,7 +124,7 @@ Then return:
 ## Security and permissions
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file.
-- Read/surface only — no trade execution, no Struct watcher mutation, no on-chain wallet activity.
+- Read/surface only, no trade execution, no Struct watcher mutation, no on-chain wallet activity.
 - Safe to run on a daily schedule. The output is informational; no action automatically follows from a surfaced signal.
 - Do not persist Privy tokens, raw secret-bearing provider logs, or auth headers in artifacts.
 
@@ -132,7 +132,7 @@ Then return:
 
 - Source recipe: this file.
 - Workflow source: `workflows/negrisk-event-arbitrage-surfacer/references/negrisk-event-arbitrage-surfacer@latest.ts`.
-- Build-date dry-run: `runs/dryrun-negrisk-2026-05-30.log` — captured live against the Gina MCP, shows World Cup negRisk event (60 constituents, sum_yes = 1.027 → +270 bp deviation, ev_vol $1.30B) and constituent depth-walk on Spain YES (zero slippage at $5,000 basket size, $14.76M of ask depth).
+- Build-date dry-run: `runs/dryrun-negrisk-2026-05-30.log`, captured live against the Gina MCP, shows World Cup negRisk event (60 constituents, sum_yes = 1.027 → +270 bp deviation, ev_vol $1.30B) and constituent depth-walk on Spain YES (zero slippage at $5,000 basket size, $14.76M of ask depth).
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `microstructure.py` + `book_depth.py` (500-event scan, count-vs-dollar reframe, World Cup case study).
 
 ## Backlinks

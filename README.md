@@ -6,13 +6,13 @@ Three Polymarket strategies for Ask Gina's Predictions vertical, built to drop s
 |---|---|---|---|---|
 | Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K mid-cap |
 | Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **sim:** +100–200% APR on $250–500 (small-base artifact). **Measured** (real CLOB tape, [`runs/backtest/`](runs/backtest/MEASURED_BACKTEST.md)): small-positive ~$100s–$1k/yr, capacity-bound, queue-adverse tail negative → **scope-down** |
-| Pack 3 | **NegRisk Favourite-Longshot Bias Harvest** | Short the overpriced longshot tail (BUY NO) when sum_yes ≈ 1 but the internal allocation is biased | Daily (held to resolution) | **VERDICT: scope-down / kill — research / dry-run only, do NOT allocate capital.** Measured on real tape (215 resolved negRisk events, [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)): **no significant tail edge** — miscalibration sign-flips by horizon, all bootstrap CIs straddle 0; extreme tail is reverse-biased (vindicates the 0.01 floor). Only structural component is the overround (~0.3% APR) — maker-spread, not FLB |
+| Pack 3 | **NegRisk Favourite-Longshot Bias Harvest** | Short the overpriced longshot tail (BUY NO) when sum_yes ≈ 1 but the internal allocation is biased | Daily (held to resolution) | **VERDICT: scope-down / kill, research / dry-run only, do NOT allocate capital.** Measured on real tape (215 resolved negRisk events, [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)): **no significant tail edge**, miscalibration sign-flips by horizon, all bootstrap CIs straddle 0; extreme tail is reverse-biased (vindicates the 0.01 floor). Only structural component is the overround (~0.3% APR), maker-spread, not FLB |
 
 The three target different mispricings, at different points in a negRisk event's life. Pack 1 fires when the constituent YES prices don't sum to 1, a mechanical arb, episodic, $10K–$48K. Pack 2 quotes the bid-ask spread continuously on a few hundred dollars of standing notional. Pack 3 works inside a basket that already sums to ~1 but is biased in how the probability is split across names.
 
 Pack 3 is the one I'd point a sceptic at first, because it's the least flattering. I measured it against the real settled-outcome tape (215 resolved negRisk events) and the favourite-longshot edge at the 0.01–0.05 tail came back at zero: the sign flips depending on how far before resolution you price it, and every bootstrap CI crosses zero. The only piece that survives is the overround, which is just the maker spread, not a behavioural edge. The extreme tail (below 0.01) is actually biased the wrong way, which happens to confirm the 0.01 floor I'd set a priori. I think a backtest that kills its own headline is worth more than three that don't, but you should read it and decide. And none of these APRs scale; they're all capacity-bound.
 
-## Pack 1 — Polymarket NegRisk Basket Arbitrage
+## Pack 1: Polymarket NegRisk Basket Arbitrage
 
 In a negRisk event exactly one outcome resolves YES, so in fair pricing the constituent YES prices have to sum to $1.00. When they don't, there's an arb. The catch is that a top-of-book gap can vanish the moment you try to fill any size, so Pack 1 depth-walks every candidate before it believes the gap. It only looks at flagship events (≥$1M lifetime volume), which comes out of the count-vs-dollar finding in [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge): most flagged arbs are traps by count but almost none by dollar. Execution is maker-only, under risk caps, with a kill-switch that trips itself.
 
@@ -21,20 +21,20 @@ It splits into three install units, the same layered shape the existing awesome-
 ```
 [ Polymarket negRisk events ]
               ↓
-   Layer 1 — Scanner (recipe-negrisk-event-arbitrage-surfacer)
+   Layer 1: Scanner (recipe-negrisk-event-arbitrage-surfacer)
    • Daily 14:00 UTC. Self-bootstrapping (no operator setup).
    • Sum-of-yes = $1.00 invariant + 0.10 sanity band.
    • Parallel depth-walk every flagged event's constituents at $50/$500/$5,000.
    • Classify real / marginal / trap; surface only real signals.
    • Output: negrisk:latest_classified KV (consumed by layer 3)
               ↓
-   Layer 2 — Volume-tier filter (recipe-volume-tier-trap-filter)
+   Layer 2: Volume-tier filter (recipe-volume-tier-trap-filter)
    • Daily 14:05 UTC. Same self-bootstrap; dollar-weighted classification.
    • Flagship ≥ $1M / mid $100K–$1M / tail < $100K.
    • Surface only tier-allowed real signals; full breakdown to KV.
    • Output: voltier:latest_surfaced KV (consumed by layer 3)
               ↓
-   Layer 3 — Maker executor (recipe-negrisk-maker-executor)
+   Layer 3: Maker executor (recipe-negrisk-maker-executor)
    • Every 5 min. Consumes signals from layer 1 + 2 KV.
    • Risk gate: capital + position-count + daily-notional + daily-loss kill-switch.
    • Per-constituent maker limit-order intents at bestBid ± 5 bp.
@@ -70,8 +70,8 @@ awesome-gina already has 5 strategies under `strategies/trading/` and 4 Polymark
 | layer | gap filled |
 |---|---|
 | Scanner | Event-level sum-of-yes = $1 invariant + depth-aware basket execution check (no existing workflow does multi-market no-arb on negRisk events) |
-| Filter | Dollar-weighted classification — the count-vs-dollar reframe (63% trap by count → 0.012% by dollar) as a runnable layer |
-| Executor | The trade-capable consumer of upstream signals — maker-only limit-order placement, basket convergence monitoring, daily-loss kill-switch (no existing executor wraps the scanner+filter signals into capital deployment) |
+| Filter | Dollar-weighted classification, the count-vs-dollar reframe (63% trap by count → 0.012% by dollar) as a runnable layer |
+| Executor | The trade-capable consumer of upstream signals, maker-only limit-order placement, basket convergence monitoring, daily-loss kill-switch (no existing executor wraps the scanner+filter signals into capital deployment) |
 
 ## Expected economics (build-day observation)
 
@@ -91,7 +91,7 @@ The full model is in `PROFITABILITY_ANALYSIS.md`. Here's what the verified workf
 
 Maker-only isn't a safety preference here, it's forced by the numbers. At the depth-walked gap, once you pay Sports fees the taker side loses money. So `makerOnly: true` is the default because crossing the spread on this signal doesn't work, full stop.
 
-## Pack 2 — Polymarket NegRisk Maker Yield
+## Pack 2: Polymarket NegRisk Maker Yield
 
 This takes the maker-rebate analysis from polymarket-edge's [`WORLD_CUP_MM.md`](https://github.com/harrywinter06-code/polymarket-edge/blob/main/WORLD_CUP_MM.md) and makes it a workflow you can actually run on Gina. I changed two things along the way. The original used realised price drift as a stand-in for adverse selection; here I use the bid-ask half-spread straight from the depth walk, which is the real thing rather than a proxy. And I added an eligibility filter on mean price and spread fraction that drops the long tail of names that lose money once adverse selection is even moderate.
 
@@ -100,7 +100,7 @@ Two install units:
 ```
 [ Polymarket negRisk events ]
               ↓
-   Layer 1 — Yield-eligibility scanner (recipe-negrisk-maker-yield-scanner)
+   Layer 1: Yield-eligibility scanner (recipe-negrisk-maker-yield-scanner)
    • Daily 14:10 UTC. Self-bootstrapping (same pattern as Pack 1).
    • Filters to flagship-tier negRisk events.
    • Per constituent: depth-walks both sides, computes mid_price + quote_half_spread.
@@ -108,7 +108,7 @@ Two install units:
    • Principled eligibility: mean_price ≥ 0.15 AND quote_half_spread_fraction ≤ 0.00375.
    • Output: makeryld:eligible_constituents KV (consumed by Layer 2).
               ↓
-   Layer 2 — Maker-yield executor (recipe-negrisk-maker-yield-executor)
+   Layer 2: Maker-yield executor (recipe-negrisk-maker-yield-executor)
    • Every 5 min. Consumes eligible constituents from KV.
    • Risk gate: max-open-quotes + max-daily-notional + daily-loss kill-switch.
    • Two-sided maker quotes at bestBid + 5 bp / bestAsk − 5 bp per constituent.
@@ -139,7 +139,7 @@ Full model and per-constituent breakeven in [`PROFITABILITY_ANALYSIS_MAKER_YIELD
 
 I'll be straight about where Pack 2 stands. The structural, methodological, and adversarial passes are done: the code parses the same way Pack 1's verified code does, I showed the analytic match to `polymarket_mm_sim.py` line by line, and the pre-send sweep turned up one bug, which I fixed. What's not done is the live-runtime check (passes 4-5-6). The JWT I'd used to run Pack 1 in Gina expired between shipping Pack 1 and building Pack 2, so I couldn't re-run. On first install, run `workflow validate` and `workflow run negrisk-maker-yield-scanner` and you'll close those out. Per-pass detail is in [`runs/TEST_RESULTS_MAKER_YIELD.md`](runs/TEST_RESULTS_MAKER_YIELD.md).
 
-## Pack 3 — Polymarket NegRisk Favourite-Longshot Bias Harvest
+## Pack 3: Polymarket NegRisk Favourite-Longshot Bias Harvest
 
 This one goes after the favourite-longshot bias, which the prediction-market literature calls about the most replicated finding there is. The idea: inside a negRisk basket whose YES prices already sum to ~1.0, the prices get squeezed toward each other, so the longshots end up too expensive and the favourites too cheap. Pack 3 shorts the overpriced longshot tail. It works exactly where Packs 1 and 2 see nothing: the basket sums to ~1, so there's no mechanical arb, but the split across names is still off.
 
@@ -148,7 +148,7 @@ Two install units:
 ```
 [ Polymarket negRisk events, sum_yes ≈ 1.0 ]
               ↓
-   Layer 1 — FLB-eligibility scanner (recipe-negrisk-flb-harvest-scanner)
+   Layer 1: FLB-eligibility scanner (recipe-negrisk-flb-harvest-scanner)
    • Daily 20:14 UTC. Self-bootstrapping (parses the registered table from bootstrap output).
    • Filters to flagship negRisk events (sum_yes ≈ 1, lifetime volume ≥ $1M).
    • De-vig: q_i = price_i / sum_yes. Debias: p_true_i = q_i^gamma / Σ q^gamma (gamma 1.0/1.10/1.20).
@@ -156,7 +156,7 @@ Two install units:
    • Eligibility gates on the MEASURABLE (gamma=1, overround-only) edge; FLB upside is reported, not gated.
    • Output: flb:eligible_baskets KV (per-name short list incl. NO token) (consumed by Layer 2).
               ↓
-   Layer 2 — FLB harvest executor (recipe-negrisk-flb-harvest-executor)
+   Layer 2: FLB harvest executor (recipe-negrisk-flb-harvest-executor)
    • Every 30 min (positions are held to resolution, not requoted intraday).
    • Shorts each longshot via a maker BUY of the NO token (the only collateralised short on the CLOB).
    • Diversification-first risk gate: per-event exposure cap (within-event names are mutually exclusive),
@@ -171,7 +171,7 @@ On the build-day flagship basket (`world-cup-winner`, 48 priced constituents, ~4
 
 | scenario | what it is | ROC annualised | tail-hit prob |
 |---|---|---|---|
-| gamma = 1.0 | overround only — **the only venue-measurable number** (≈ maker spread, not distinctively FLB) | **~0.3%** | ~17% |
+| gamma = 1.0 | overround only, **the only venue-measurable number** (≈ maker spread, not distinctively FLB) | **~0.3%** | ~17% |
 | gamma = 1.10 | central, **literature-anchored, NOT measured here** | **~1.9%** | ~15% |
 | gamma = 1.20 | aggressive, literature-anchored | **~3.5%** | ~13% |
 
@@ -197,25 +197,25 @@ gina-starter-pack/
 │       ├── strategy-polymarket-negrisk-maker-yield.md            ← Pack 2 (2 layers)
 │       └── strategy-polymarket-negrisk-flb-harvest.md            ← Pack 3 (2 layers)
 ├── workflows/
-│   ├── negrisk-event-arbitrage-surfacer/        (Pack 1 layer 1 — scanner)
+│   ├── negrisk-event-arbitrage-surfacer/        (Pack 1 layer 1: scanner)
 │   │   ├── README.md
 │   │   └── references/negrisk-event-arbitrage-surfacer@latest.ts
-│   ├── volume-tier-trap-filter/                  (Pack 1 layer 2 — filter)
+│   ├── volume-tier-trap-filter/                  (Pack 1 layer 2: filter)
 │   │   ├── README.md
 │   │   └── references/volume-tier-trap-filter@latest.ts
-│   ├── negrisk-maker-executor/                   (Pack 1 layer 3 — executor)
+│   ├── negrisk-maker-executor/                   (Pack 1 layer 3: executor)
 │   │   ├── README.md
 │   │   └── references/negrisk-maker-executor@latest.ts
-│   ├── negrisk-maker-yield-scanner/              (Pack 2 layer 1 — eligibility scanner)
+│   ├── negrisk-maker-yield-scanner/              (Pack 2 layer 1: eligibility scanner)
 │   │   ├── README.md
 │   │   └── references/negrisk-maker-yield-scanner@latest.ts
-│   ├── negrisk-maker-yield-executor/             (Pack 2 layer 2 — maker-yield executor)
+│   ├── negrisk-maker-yield-executor/             (Pack 2 layer 2: maker-yield executor)
 │   │   ├── README.md
 │   │   └── references/negrisk-maker-yield-executor@latest.ts
-│   ├── negrisk-flb-harvest-scanner/              (Pack 3 layer 1 — FLB-eligibility scanner)
+│   ├── negrisk-flb-harvest-scanner/              (Pack 3 layer 1: FLB-eligibility scanner)
 │   │   ├── README.md
 │   │   └── references/negrisk-flb-harvest-scanner@latest.ts
-│   └── negrisk-flb-harvest-executor/             (Pack 3 layer 2 — FLB harvest executor)
+│   └── negrisk-flb-harvest-executor/             (Pack 3 layer 2: FLB harvest executor)
 │       ├── README.md
 │       └── references/negrisk-flb-harvest-executor@latest.ts
 ├── recipes/

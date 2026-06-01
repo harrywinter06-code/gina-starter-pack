@@ -9,7 +9,7 @@ Checks the README claim that the pack is "PR-ready into `awesome-gina`" against 
 Ruby is unavailable in this environment, so `scripts/validate_primitives.rb` was
 ported faithfully to Python (`runs/validate_primitives_port.py`). **Fidelity
 self-test:** the port reproduces `primitive metadata validation passed for 40
-entries` on the pristine live clone — only then was its verdict on the merged
+entries` on the pristine live clone, only then was its verdict on the merged
 (pack-added) tree trusted. The pack's 12 primitives were copied into their
 canonical target locations in a clone of the live repo and the port was run on the
 merged tree (52 entries). All 5 workflows were additionally validated in Gina's
@@ -21,7 +21,7 @@ live runtime via the `gina-predictions` MCP.
 |---|---|
 | Frontmatter required fields (id/slug/name/type/summary/category/license/version/visibility/status/tags) | ✅ all 12 primitives present |
 | `repo`-or-`homepage`, `verification.tier`, `security.permissions` | ✅ present on all |
-| Permission vocabulary (`read-orderbook`, `write-agentfs-state`) | ✅ legit — live `strategy-weather-bond-rotator` uses both; not invented |
+| Permission vocabulary (`read-orderbook`, `write-agentfs-state`) | ✅ legit, live `strategy-weather-bond-rotator` uses both; not invented |
 | `category` prefix (`strategies/` `recipes/` `workflows/`) | ✅ correct; `strategies/predictions` is allowed (prefix-only check) |
 | Strategy `relationships.recipeIds` non-empty + all cross-refs resolve | ✅ |
 | Workflow artifact filenames not starting `workflow-` | ✅ |
@@ -31,7 +31,7 @@ live runtime via the `gina-predictions` MCP.
 ## The divergence (and fix)
 
 The CI validator requires every strategy-linked workflow README to contain a
-schedule line matching one of its `CREATE_PAGE_WORKFLOW_TRIGGER_PATTERNS` — the
+schedule line matching one of its `CREATE_PAGE_WORKFLOW_TRIGGER_PATTERNS`, the
 canonical form (per `CONTRIBUTING.md`) being:
 
 ```
@@ -51,7 +51,7 @@ primitive metadata validation FAILED:
 - workflows/negrisk-maker-yield-executor/README.md: ...
 ```
 
-So the README's original "zero schema translation, PR-ready" claim was **false** —
+So the README's original "zero schema translation, PR-ready" claim was **false**, 
 the pack would have failed `awesome-gina` CI on contact. **Fix applied:** rewrote
 the `- Trigger:` line in all 5 workflow READMEs to the canonical
 `recurring schedule \`<cron>\` in \`UTC\`` form (cron and timezone preserved).
@@ -84,7 +84,7 @@ fix in this change: all 12 primitives now pass the live CI gate in a merged tree
 and 4/5 workflows validate in Gina's live runtime (5th structural-only this
 session). Reproduce with `runs/validate_primitives_port.py`.
 
-## Addendum — Pack 3 (FLB Harvest), 2026-05-31
+## Addendum: Pack 3 (FLB Harvest), 2026-05-31
 
 Pack 3 adds 5 primitives (1 strategy + 2 recipes + 2 workflow READMEs), taking the
 pack to 17. Conformance verified to the extent possible this session:
@@ -97,7 +97,7 @@ pack to 17. Conformance verified to the extent possible this session:
   workflow READMEs use the canonical `- Trigger: recurring schedule \`<cron>\` in
   \`UTC\`` form from the start (scanner `14 20 * * *`, executor `*/30 * * * *`), so
   the strategy-linked-workflow check passes with no fix.
-- **Live runtime (Gina MCP):** both Pack 3 workflows `validate` AND `run` cleanly —
+- **Live runtime (Gina MCP):** both Pack 3 workflows `validate` AND `run` cleanly, 
   `negrisk-flb-harvest-scanner` (3 steps, run `run_mpu8uvavqxig7b`, 1 eligible
   basket) and `negrisk-flb-harvest-executor` (5 steps, run `run_mpu8xb3jhmvuoi`).
   This is stronger than the Packs 1–2 live status above (which had a 5th
@@ -109,7 +109,7 @@ pack to 17. Conformance verified to the extent possible this session:
   `strategies/`, `workflows/` over a clone and run `validate_primitives_port.py`.
 - **FLB backtest dataset re-fetched 2026-06-01:** the earlier dataset's event count
   was mis-reported (`flb_fetch.py` wrote events *scanned*, not events with usable
-  rows — a fetch-loop artifact, not an analyzed-event count). Fixed the counter and
+  rows, a fetch-loop artifact, not an analyzed-event count). Fixed the counter and
   re-fetched on live network → **3,319 constituents from 215 distinct resolved
   negRisk events** (was 1,429 / 107). All FLB docs updated to the regenerated
   numbers; the measured verdict (no significant tail edge, CIs straddle zero) is

@@ -39,7 +39,7 @@ Workflow submission with artifact at `workflows/negrisk-flb-harvest-scanner/refe
 
 - Self-bootstraps the Polymarket events table via `exec` to `host-tools fetchPolymarketData` at
   `limit=5`, then **parses the registered table name directly from the bootstrap output**
-  (`{"table":"fetchPolymarketData_<hash>"}`) rather than guessing via `sqlite_master` ROWID ordering —
+  (`{"table":"fetchPolymarketData_<hash>"}`) rather than guessing via `sqlite_master` ROWID ordering, 
   which is unreliable across CREATE/DROP churn and was the cause of a real 0-result bug found in
   testing (run `run_mpu8qsm5sckt6g`).
 - Filters to flagship negRisk events: `|sum_yes - 1.0| <= maxAbsDeviation` AND lifetime volume >= $1M
@@ -62,20 +62,20 @@ Workflow submission with artifact at `workflows/negrisk-flb-harvest-scanner/refe
   `gammaCentral` (1.10), `gammaAggressive` (1.20), `feeBufferBp` (50), `depthSizeUsd` (50),
   `maxConstituentsToWalk` (100).
 - Outputs:
-  - `flb:eligible_baskets` KV — consumed by `negrisk-flb-harvest-executor`
-  - `flb:current_table` KV — bootstrapped table name for cross-step reuse
+  - `flb:eligible_baskets` KV, consumed by `negrisk-flb-harvest-executor`
+  - `flb:current_table` KV, bootstrapped table name for cross-step reuse
   - `/workspace/scratch/flb_scored.json`, `flb_eligible.json`, `flb_eligibility.md` artifacts
 - Side effects: reads Polymarket gamma + CLOB/orderbook; writes KV (`flb:*`) and local artifacts; no order submission.
 - Failure modes: no eligible baskets (expected most days); `getPredictionOrderbook` timeout (constituent excluded); basket outside the negRisk sanity band (excluded); empty/degenerate tail book (name not tradeable).
 
 ## Workflow steps
 
-1. **fetch_and_register** — Self-bootstrap via `exec`; parse the registered events table from the
+1. **fetch_and_register**, Self-bootstrap via `exec`; parse the registered events table from the
    bootstrap output (fallback: `sqlite_master`); alias + dedup by `market_id` to `polymarket_flb_raw`.
-2. **score_flb** — Aggregate event-level `sum_yes` + `ev_vol`, filter flagship negRisk events. One SQL
+2. **score_flb**, Aggregate event-level `sum_yes` + `ev_vol`, filter flagship negRisk events. One SQL
    fetch of all constituents (extracts both YES and NO tokens). De-vig + debias 3 gamma scenarios.
    Score the 0.01-0.05 tail. Parallel-depth-walk for tradeability. Apply eligibility gate.
-3. **surface** — Filter to eligible baskets, flatten to a per-name short list, persist to KV + summary.
+3. **surface**, Filter to eligible baskets, flatten to a per-name short list, persist to KV + summary.
 
 ## Execution diagram
 
@@ -104,7 +104,7 @@ flowchart TD
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file, read/write-kv.
 - Scope controls: allowlist host tools per step (`fetchPolymarketData` in step 1, `getPredictionOrderbook` in step 2).
-- Read/surface only — no trade execution. Safe on a daily schedule.
+- Read/surface only, no trade execution. Safe on a daily schedule.
 
 ## Evidence
 

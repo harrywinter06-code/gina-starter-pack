@@ -39,7 +39,7 @@ companion FLB executor. Read/surface only.
 
 - Runs the `negrisk-flb-harvest-scanner` workflow once per day at 20:14 UTC.
 - Self-bootstraps the Polymarket events table (no operator setup), parsing the registered table name
-  directly from the bootstrap output (robust against `sqlite_master` ROWID mis-ordering).
+  directly from the bootstrap output (safe against `sqlite_master` ROWID mis-ordering).
 - Filters to flagship negRisk events: `|sum_yes - 1.0| <= maxAbsDeviation` AND lifetime volume >= $1M
   AND >= `minConstituents` priced constituents. FLB fires when the basket sums to ~1 (no Pack-1 arb)
   but the internal allocation is biased.
@@ -77,7 +77,7 @@ companion FLB executor. Read/surface only.
   - run artifacts at `/workspace/scratch/flb_scored.json`, `flb_eligible.json`, `flb_eligibility.md`
 - Side effects: reads Polymarket gamma + CLOB/orderbook; writes KV (`flb:*`) and local artifacts; does NOT submit orders.
 - Failure modes:
-  - no eligible baskets (expected most days — flagship + tradeable-tail is a narrow filter)
+  - no eligible baskets (expected most days, flagship + tradeable-tail is a narrow filter)
   - `getPredictionOrderbook` timeout (constituent excluded)
   - basket outside the negRisk sanity band (excluded as non-negRisk)
 
@@ -128,7 +128,7 @@ Then return:
 ## Security and permissions
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file.
-- Read/surface only — no trade execution, no on-chain wallet activity.
+- Read/surface only, no trade execution, no on-chain wallet activity.
 - Safe to run on a daily schedule; output is informational.
 - Do not persist Privy tokens, raw secret-bearing provider logs, or auth headers in artifacts.
 
@@ -136,7 +136,7 @@ Then return:
 
 - Source recipe: this file.
 - Workflow source: `workflows/negrisk-flb-harvest-scanner/references/negrisk-flb-harvest-scanner@latest.ts`.
-- Live run (real signal): `run_mpu8uvavqxig7b` (1 eligible basket, 10 short candidates) — see [TEST_RESULTS_FLB.md](../../runs/TEST_RESULTS_FLB.md).
+- Live run (real signal): `run_mpu8uvavqxig7b` (1 eligible basket, 10 short candidates), see [TEST_RESULTS_FLB.md](../../runs/TEST_RESULTS_FLB.md).
 - Underlying anomaly: favourite-longshot bias (Thaler-Ziemba; modern Polymarket/Kalshi calibration literature).
 
 ## Backlinks

@@ -67,7 +67,7 @@ Scheduled daily scan that applies the principled eligibility filter (mean_price 
   - writes KV state (`makeryld:*` namespace) and local run artifacts
   - does NOT submit orders, does NOT manage Struct watchers
 - Failure modes:
-  - no eligible constituents on a given run (expected most days — the structural filter intentionally rejects long-tail markets; WORLD_CUP_MM.md found 41 of 48 net-negative at moderate AS)
+  - no eligible constituents on a given run (expected most days, the structural filter intentionally rejects long-tail markets; WORLD_CUP_MM.md found 41 of 48 net-negative at moderate AS)
   - `getPredictionOrderbook` timeout on a constituent (excluded from this scan)
   - invalid orderbook state (skipped silently)
 
@@ -90,7 +90,7 @@ flowchart TD
 1. Install the workflow artifact from `workflows/negrisk-maker-yield-scanner/references/negrisk-maker-yield-scanner@latest.ts`.
 2. Schedule the workflow at `10 14 * * *` in `UTC` (10 min after Pack 1 layers to avoid host-tool contention).
 3. **No operator setup required.** Same self-bootstrap pattern as Pack 1's surfacer recipe.
-4. Start with the documented defaults. The breakeven `maxSpreadFraction: 0.00375` is the analytic moderate-AS-breakeven from polymarket_mm_sim.py — relax only with explicit awareness of the AS-scenario implications.
+4. Start with the documented defaults. The breakeven `maxSpreadFraction: 0.00375` is the analytic moderate-AS-breakeven from polymarket_mm_sim.py, relax only with explicit awareness of the AS-scenario implications.
 5. Review `/workspace/scratch/makeryld_eligibility.md` after each run; per-event baskets show stacked per-scenario P&L.
 6. The recipe is read/surface only. Promoting a flagged eligible constituent to a live maker quote is handled by the companion `recipe-negrisk-maker-yield-executor` recipe, which consumes `makeryld:eligible_constituents` from KV.
 
@@ -116,7 +116,7 @@ Then return:
 ## Security and permissions
 
 - `security.permissions`: read-market-data, read-orderbook, write-run-artifacts, write-local-state-file.
-- Read/surface only — no trade execution, no Struct watcher mutation, no on-chain wallet activity.
+- Read/surface only, no trade execution, no Struct watcher mutation, no on-chain wallet activity.
 - Safe to run on a daily schedule. The output is informational; no action automatically follows from a surfaced eligible constituent.
 - Do not persist Privy tokens, raw secret-bearing provider logs, or auth headers in artifacts.
 

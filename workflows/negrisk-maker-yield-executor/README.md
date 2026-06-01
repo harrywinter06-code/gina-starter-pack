@@ -45,7 +45,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
 - Applies a risk gate: max-open-quotes, max-daily-notional, max-daily-loss with auto-tripping kill-switch.
 - For each allowed constituent, refreshes the orderbook and computes two-sided maker quote intents at `bestBid + 5bp` (buy side) and `bestAsk − 5bp` (sell side), snapped to the market tick grid and clamped maker-only (the buy never reaches bestAsk, the sell never reaches bestBid).
 - In `dryRun: true` mode (default), persists the quote intent as a reviewable proof without submission.
-- In `dryRun: false` mode (operator-armed), submits both buy and sell limit orders via `managePredictionOrders` (production submission lines are intentionally stubbed in the as-shipped workflow — see Setup #5).
+- In `dryRun: false` mode (operator-armed), submits both buy and sell limit orders via `managePredictionOrders` (production submission lines are intentionally stubbed in the as-shipped workflow, see Setup #5).
 - Monitors open quotes every tick: re-queries each constituent's orderbook, checks whether the current bestAsk/bestBid has crossed our limit, estimates rebate net of moderate-AS cost (capped at half-spread × scenario fraction).
 - Aggregates realised P&L gross per day, persisted as `makeryld:daily_pnl:<YYYY-MM-DD>`.
 - Auto-trips the kill-switch when the daily-loss cap is breached; no further quotes until manually reset.
@@ -61,7 +61,7 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
   - `maxDailyLossUsd` (default 50)
   - `makerLimitPriceOffsetBp` (default 5)
   - `makerRebateBp` (default 18.75)
-  - `asScenarioFraction` (default 0.5 — moderate-AS settlement)
+  - `asScenarioFraction` (default 0.5, moderate-AS settlement)
   - `dryRun` (default `true`)
 - Outputs:
   - per-cycle intent + cycle-result JSON at `/workspace/scratch/makeryld_cycle.json`
@@ -75,19 +75,19 @@ Workflow submission with artifact at `workflows/negrisk-maker-yield-executor/ref
   - writes KV under `makeryld:*` namespace and AgentFS state for quote lifecycle
   - may submit Polymarket maker limit orders ONLY when `dryRun: false`, all risk gates pass, AND kill-switch is `armed`
 - Failure modes:
-  - empty eligibility KV (idle return — scanner produced no eligible constituents)
+  - empty eligibility KV (idle return, scanner produced no eligible constituents)
   - risk gate failure (logged, no quotes placed)
   - orderbook call failure (constituent excluded from this cycle)
-  - invalid orderbook state (bestBid ≤ 0 or crossed book — excluded)
+  - invalid orderbook state (bestBid ≤ 0 or crossed book, excluded)
   - kill-switch tripped (no new quotes until operator resets `makeryld:kill_switch_state`)
 
 ## Workflow steps
 
-1. **load_state** — Read daily P&L gross, daily notional used, kill-switch state, and current open quotes from KV; surface aggregate state for downstream steps.
-2. **evaluate_eligibility** — Read `makeryld:eligible_constituents` from KV; identify constituents not already quoting; persist candidates to `makeryld:last_candidates` KV + file for risk_gate consumption.
-3. **risk_gate** — Apply caps (kill-switch, daily-loss, max-open-quotes, max-daily-notional); produce `allowed` and `blocks` lists; auto-trip kill-switch on daily-loss-cap breach.
-4. **plan_and_quote** — For each allowed candidate, fetch fresh orderbook via `getPredictionOrderbook`, infer the market tick from the price grid, compute two-sided maker limit intents (`bestBid + 5bp` buy, `bestAsk − 5bp` sell) snapped to tick and clamped maker-only/non-crossing, persist intents to KV as dry-run proof OR (when `dryRun: false`) submit via `managePredictionOrders` (production path intentionally stubbed).
-5. **monitor_and_settle** — Iterate all open quotes, refresh per-constituent orderbook, check fills (orderbook crossed our limit), estimate per-cycle rebate net of AS, aggregate daily P&L gross into `makeryld:daily_pnl:<date>`.
+1. **load_state**, Read daily P&L gross, daily notional used, kill-switch state, and current open quotes from KV; surface aggregate state for downstream steps.
+2. **evaluate_eligibility**, Read `makeryld:eligible_constituents` from KV; identify constituents not already quoting; persist candidates to `makeryld:last_candidates` KV + file for risk_gate consumption.
+3. **risk_gate**, Apply caps (kill-switch, daily-loss, max-open-quotes, max-daily-notional); produce `allowed` and `blocks` lists; auto-trip kill-switch on daily-loss-cap breach.
+4. **plan_and_quote**, For each allowed candidate, fetch fresh orderbook via `getPredictionOrderbook`, infer the market tick from the price grid, compute two-sided maker limit intents (`bestBid + 5bp` buy, `bestAsk − 5bp` sell) snapped to tick and clamped maker-only/non-crossing, persist intents to KV as dry-run proof OR (when `dryRun: false`) submit via `managePredictionOrders` (production path intentionally stubbed).
+5. **monitor_and_settle**, Iterate all open quotes, refresh per-constituent orderbook, check fills (orderbook crossed our limit), estimate per-cycle rebate net of AS, aggregate daily P&L gross into `makeryld:daily_pnl:<date>`.
 
 ## Execution diagram
 
@@ -124,7 +124,7 @@ flowchart TD
 5. **Start with `dryRun: true` and `notionalPerQuoteUsd: 50` (kept small even in dry-run so any accidental live path doesn't size up).** Verify dry-run intents at `/workspace/scratch/makeryld_cycle.json` over at least one observation window (≥ 7 days) before considering live promotion.
 6. To enable production submission (operator-arming step):
    - In the workflow TS, set `const dryRun = false` in `plan_and_quote` and `monitor_and_settle` (currently hardcoded `true` as defense-in-depth).
-   - Uncomment the `managePredictionOrders` create blocks in `plan_and_quote`. These are intentionally stubbed in the as-shipped artifact as defense-in-depth — going live requires explicit, traceable edits.
+   - Uncomment the `managePredictionOrders` create blocks in `plan_and_quote`. These are intentionally stubbed in the as-shipped artifact as defense-in-depth, going live requires explicit, traceable edits.
    - Set `dryRun: false` in the recipe inputs as well (for consistency, although the workflow-level constant is what actually controls execution).
    - Confirm Polymarket account has USDC.e balance ≥ `maxDailyNotionalUsd`.
    - Monitor first cycle end-to-end before relaxing notional caps.
@@ -132,7 +132,7 @@ flowchart TD
 ## Security and permissions
 
 - `security.permissions`: read-market-data, read-orderbook, read-position, place-prediction-trade, close-prediction-position, write-run-artifacts, write-local-state-file, write-agentfs-state, read/write-kv.
-- The workflow includes `place-prediction-trade` and `close-prediction-position` because the trade-capable code path exists. The as-shipped artifact has those submission lines commented out as defense-in-depth — even with `dryRun: false` they would not fire without explicit operator edit.
+- The workflow includes `place-prediction-trade` and `close-prediction-position` because the trade-capable code path exists. The as-shipped artifact has those submission lines commented out as defense-in-depth, even with `dryRun: false` they would not fire without explicit operator edit.
 - Kill-switch (`makeryld:kill_switch_state`) auto-trips on daily-loss cap breach. Operator must explicitly reset to resume.
 - Per-quote notional cap (`notionalPerQuoteUsd`) and per-day notional cap (`maxDailyNotionalUsd`) provide defense-in-depth against runaway capital deployment.
 - Maker-only by construction: the workflow never crosses the spread, only posts inside it via `makerLimitPriceOffsetBp`.
@@ -141,7 +141,7 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy — Layer 2).
+- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy, Layer 2).
 - Companion recipe: `recipes/predictions/recipe-negrisk-maker-yield-executor.md`.
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `WORLD_CUP_MM.md` + `polymarket_mm_sim.py` (analytic core).
 - Pack-level profitability analysis: `PROFITABILITY_ANALYSIS_MAKER_YIELD.md`.

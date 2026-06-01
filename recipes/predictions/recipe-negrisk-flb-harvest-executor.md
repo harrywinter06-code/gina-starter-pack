@@ -42,18 +42,18 @@ diversification-first risk model. The trade-capable layer of Pack 3; defaults to
 
 ## What it does
 
-- Runs every 30 minutes at `*/30 * * * *` UTC. (Slower than Pack 2 — FLB positions are held to event
+- Runs every 30 minutes at `*/30 * * * *` UTC. (Slower than Pack 2, FLB positions are held to event
   resolution, not requoted intraday.)
 - Reads `flb:eligible_baskets` from KV; drops names already shorted; re-checks the conservative-edge
   floor at consume time.
 - Applies diversification-first risk caps: **per-event exposure cap** (within one negRisk event the
-  shorted names are mutually exclusive — concentration there is a single correlated bet), total
+  shorted names are mutually exclusive, concentration there is a single correlated bet), total
   exposure cap, max open positions, daily notional, daily-loss kill-switch.
 - For each allowed name, refreshes the **NO-token** orderbook and computes a maker BUY-NO limit
-  (improves the bid by the offset, tick-rounded, clamped so it never crosses the ask — maker-only).
+  (improves the bid by the offset, tick-rounded, clamped so it never crosses the ask, maker-only).
 - In dryRun, persists the intent as a reviewable proof. In live mode (after operator arming), submits
   via `managePredictionOrders` (production lines commented out in the as-shipped workflow).
-- Books **expected edge** on fill — a mark-to-model EV at central gamma. **Realised P&L (including the
+- Books **expected edge** on fill, a mark-to-model EV at central gamma. **Realised P&L (including the
   fat tail when a shorted longshot wins) only materialises at event resolution**, so the primary risk
   control is exposure, not realised daily P&L.
 - Recomputes total live exposure each cycle and trips the kill-switch on breach.
@@ -122,7 +122,7 @@ flowchart TD
    - Uncomment the `managePredictionOrders` create block in `plan_and_short` (commented as defense-in-depth).
    - Set `collateralPerNameUsd` to a small first-live value.
    - Verify Polymarket account has USDC.e balance >= `maxTotalExposureUsd`.
-   - **Understand positions are held to resolution and the tail is fat** — confirm you accept it before arming.
+   - **Understand positions are held to resolution and the tail is fat**, confirm you accept it before arming.
 
 ## Quick Copy Prompt (Ask Gina)
 
@@ -156,7 +156,7 @@ Then return:
 
 - Source recipe: this file.
 - Workflow source: `workflows/negrisk-flb-harvest-executor/references/negrisk-flb-harvest-executor@latest.ts`.
-- Live run: `run_mpu8xb3jhmvuoi` (consumed 10 candidates, per-event cap correctly throttled to 2 shorts in dry-run) — see [TEST_RESULTS_FLB.md](../../runs/TEST_RESULTS_FLB.md).
+- Live run: `run_mpu8xb3jhmvuoi` (consumed 10 candidates, per-event cap correctly throttled to 2 shorts in dry-run), see [TEST_RESULTS_FLB.md](../../runs/TEST_RESULTS_FLB.md).
 - Economic model: [`PROFITABILITY_ANALYSIS_FLB.md`](../../PROFITABILITY_ANALYSIS_FLB.md).
 
 ## Backlinks

@@ -54,11 +54,11 @@ constituents, ~46 days to resolution):
 
 | scenario | what it is | edge / shorted-notional | **return on collateral (period)** | **annualised** | tail-hit prob |
 |---|---|---|---|---|---|
-| **gamma = 1.0** | overround only — **the only venue-measurable number** | +1.9% | +0.03% | **~0.3%** | ~17% |
+| **gamma = 1.0** | overround only, **the only venue-measurable number** | +1.9% | +0.03% | **~0.3%** | ~17% |
 | gamma = 1.10 | central, **literature-anchored, NOT measured here** | +13.5% | +0.24% | **~1.9%** | ~15% |
 | gamma = 1.20 | aggressive, literature-anchored | +24.4% | +0.44% | **~3.5%** | ~13% |
 
-Three things to take from that table. First, ignore the "% of shorted notional" column — it flatters
+Three things to take from that table. First, ignore the "% of shorted notional" column, it flatters
 the strategy. Shorting a longshot YES is really buying the NO token, which ties up close to full
 collateral (~$1/share), so on the denominator that matters the edge is low single digits annualised
 even in the aggressive case. Second, the only number you can actually measure on this venue is the
@@ -74,7 +74,7 @@ the literature gamma holds on Polymarket Sports and you're willing to wear the t
 actually measure, it's just a maker-spread play that Pack 2 already does. The value here is the machinery
 and the honest decomposition, not the APR.
 
-### Verdict (measured backtest): SCOPE-DOWN / kill as a capital strategy — research / dry-run only
+### Verdict (measured backtest): SCOPE-DOWN / kill as a capital strategy, research / dry-run only
 
 I checked the edge against the real settled-outcome tape: 3,319 constituents from 215 resolved negRisk
 events (2024 election, NBA/NFL/UCL/PL champions, Fed), each priced 24h/72h/168h before resolution from
@@ -93,7 +93,7 @@ right call. And what mild FLB there is sits in the 0.10–0.50 band, outside thi
 as noisy.
 
 There's no measured net that justifies putting money on this. Keep the scanner as a research surface and
-the executor as a dry-run reference — the method is sound and the floor held up under measurement — but
+the executor as a dry-run reference, the method is sound and the floor held up under measurement, but
 don't allocate capital. The sim-derived `gamma>1` rows in the economics below are only the literature
 prior now; the measured `gamma ≈ 1` supersedes them, so don't read them as deployable.
 
@@ -199,14 +199,14 @@ flowchart TD
 
 - Trigger:
   - scanner: daily cron `14 20 * * *` UTC (offset from Packs 1/2 to avoid host-tool contention)
-  - executor: cron `*/30 * * * *` UTC (slower than Pack 2 — positions are held to resolution, not requoted intraday)
+  - executor: cron `*/30 * * * *` UTC (slower than Pack 2, positions are held to resolution, not requoted intraday)
 - Inputs: per-recipe, documented in each recipe MD; defaults calibrated for first-deploy safety.
 - Outputs:
   - scanner: `flb:eligible_baskets` KV (per-basket edge triple + per-name short list with NO token) + `/workspace/scratch/flb_eligibility.md`
   - executor: `flb:positions:<no_token>` per short, `flb:exposure_state`, `flb:daily_notional:<date>`, `flb:kill_switch_state`, `/workspace/scratch/flb_cycle.json` and `flb_summary.md`
 - Side effects: reads Polymarket gamma + CLOB/orderbook; writes KV + artifacts; may submit Polymarket maker BUY-NO orders only when executor `dryRun: false` AND the operator has uncommented `managePredictionOrders` AND the risk gate passes AND the kill switch is armed.
 - Failure modes per layer:
-  - **scanner**: empty result on quiet days (expected — most events are not flagship or have no tradeable 0.01-0.05 tail), constituent missing `clob_token_ids` (skipped), `getPredictionOrderbook` timeout (constituent excluded), basket with `sum_yes` outside `1 +/- maxAbsDeviation` (excluded as non-negRisk).
+  - **scanner**: empty result on quiet days (expected, most events are not flagship or have no tradeable 0.01-0.05 tail), constituent missing `clob_token_ids` (skipped), `getPredictionOrderbook` timeout (constituent excluded), basket with `sum_yes` outside `1 +/- maxAbsDeviation` (excluded as non-negRisk).
   - **executor**: kill switch tripped (no new shorts), per-event/total exposure cap reached (logged, no shorts), invalid NO orderbook (name excluded), maker order rejection in live mode (held to next tick).
 
 ## Expected economics
@@ -220,7 +220,7 @@ measured-vs-literature-anchored split.
 
 Two independent recipes. Install both for the full pipeline, or just the scanner for research mode.
 
-1. **Scanner** (always install). Use `workflows/negrisk-flb-harvest-scanner/references/negrisk-flb-harvest-scanner@latest.ts`. Schedule at `14 20 * * *` UTC. Self-bootstraps the Polymarket events table — no operator setup.
+1. **Scanner** (always install). Use `workflows/negrisk-flb-harvest-scanner/references/negrisk-flb-harvest-scanner@latest.ts`. Schedule at `14 20 * * *` UTC. Self-bootstraps the Polymarket events table, no operator setup.
 2. **Executor** (only for capital deployment). Use `workflows/negrisk-flb-harvest-executor/references/negrisk-flb-harvest-executor@latest.ts`. Schedule at `*/30 * * * *` UTC. Defaults to `dryRun: true` and `collateralPerNameUsd: 25`. Going live requires:
    - Edit the workflow TS: set `const dryRun = false` in both `plan_and_short` and `monitor_and_mark`.
    - Uncomment the `managePredictionOrders` block in `plan_and_short` (commented as defense-in-depth).
@@ -239,7 +239,7 @@ Two independent recipes. Install both for the full pipeline, or just the scanner
 | P&L timing | on convergence | per fill (rebate) | only at event resolution |
 | Honesty headline | depth-walked vs TOB gap | knife-edge at moderate AS | measured tail edge ≈ 0 (not significant); thin ROC |
 
-All three can run simultaneously on the same events — they target different mispricings across the
+All three can run simultaneously on the same events, they target different mispricings across the
 negRisk lifecycle.
 
 ## Security and permissions
@@ -265,7 +265,7 @@ negRisk lifecycle.
 - Underlying anomaly: favourite-longshot bias, the most-replicated finding in prediction-market and
   pari-mutuel-betting research (Thaler-Ziemba 1988 and the modern Polymarket/Kalshi calibration literature).
 - Submission status: unverified. The dry-run path is reviewable end-to-end; the live-execution path is
-  intentionally NOT verified — operator responsibility.
+  intentionally NOT verified, operator responsibility.
 
 ## Backlinks
 

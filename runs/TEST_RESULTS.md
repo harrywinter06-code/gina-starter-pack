@@ -1,4 +1,4 @@
-# Test results — workflow validation against live Gina MCP + TypeScript parse pass
+# Test results: workflow validation against live Gina MCP + TypeScript parse pass
 
 Captured 2026-05-30 across three passes:
 
@@ -10,9 +10,9 @@ One known limitation is explicitly documented rather than fixed (matches publish
 
 ---
 
-## Pass 1 — initial validation
+## Pass 1: initial validation
 
-### Step 1 — `fetch_and_register`
+### Step 1: `fetch_and_register`
 
 **Tested:** `callTool("fetchPolymarketData", { dataset: "events", active: true, limit: 5 })`
 
@@ -33,7 +33,7 @@ One known limitation is explicitly documented rather than fixed (matches publish
 
 **Fix:** Step 1 detects `result.table` and uses the auto-registered table name directly. Falls back to manual write+register only for the inline-array case. Passes the resolved table name to subsequent steps via `kv.set("<prefix>:current_table", ...)`. Same logic in all 3 workflows.
 
-### Step 2 — `compute_event_gaps` (SQL aggregation)
+### Step 2: `compute_event_gaps` (SQL aggregation)
 
 **Tested:** the exact aggregation SQL the workflow runs, against `fetchPolymarketData_4a869d0c`.
 
@@ -53,37 +53,37 @@ One known limitation is explicitly documented rather than fixed (matches publish
 
 **Result after fix:** world-cup-winner remains the only flagged event (deviation = 270 bp, well within the 0.10 sanity band). UEFA CL Winner and PSG vs Arsenal are within the band but their deviations are below the 50 bp fee buffer, so they're not flagged. WTI and US-Iran are filtered out as non-negRisk before fee-buffer evaluation.
 
-### Step 3 — Depth walk
+### Step 3: Depth walk
 
 **Tested earlier in session:** `getPredictionOrderbook` against Spain YES (representative top constituent of world-cup-winner). See `dryrun-negrisk-2026-05-30.log` (bestBid 0.167, bestAsk 0.168, $14.76M ask depth, zero slippage at $5,000 basket size).
 
 ---
 
-## Pass 2 — adversarial red-team on the workflow code
+## Pass 2: adversarial red-team on the workflow code
 
-### Risk 1 (FIXED) — SQL injection via dynamic `event_slug` in WHERE clause
+### Risk 1 (FIXED): SQL injection via dynamic `event_slug` in WHERE clause
 
 **Threat:** Original Step 3 built per-event SQL via `"WHERE event_slug = \"" + ev.event_slug + "\""`. If a Polymarket event_slug ever contained `"`, `;`, or an injection payload, the dynamic concatenation would break SQL parsing or expose injection. Real event_slugs are kebab-case (e.g. `world-cup-winner`), but defense-in-depth requires not assuming external data shape.
 
-**Bypass attempt:** Construct a malicious slug like `world-cup-winner"; DROP TABLE polymarket; --`. The resulting SQL would be: `WHERE event_slug = "world-cup-winner"; DROP TABLE polymarket; --"` — if SQLite is in multi-statement mode, the DROP fires. Even without multi-statement, the unterminated quote breaks parsing.
+**Bypass attempt:** Construct a malicious slug like `world-cup-winner"; DROP TABLE polymarket; --`. The resulting SQL would be: `WHERE event_slug = "world-cup-winner"; DROP TABLE polymarket; --"`, if SQLite is in multi-statement mode, the DROP fires. Even without multi-statement, the unterminated quote breaks parsing.
 
-**Fix:** Step 3 replaced with a single SQL fetch of ALL constituents (no dynamic WHERE clause) and in-memory grouping by `event_slug` in JS. The new SQL is fully static. Then JS groups: `byEventSlug[c.event_slug] = [...]`. The flagged-event loop indexes into `byEventSlug[ev.event_slug]` — JS object key access, no SQL involved. Injection vector eliminated.
+**Fix:** Step 3 replaced with a single SQL fetch of ALL constituents (no dynamic WHERE clause) and in-memory grouping by `event_slug` in JS. The new SQL is fully static. Then JS groups: `byEventSlug[c.event_slug] = [...]`. The flagged-event loop indexes into `byEventSlug[ev.event_slug]`, JS object key access, no SQL involved. Injection vector eliminated.
 
 **Verification:** Tested live against `fetchPolymarketData_4a869d0c` (168 rows). Single SQL fetch returned all rows correctly grouped, including events with quote-free slugs and the 3-market PSG vs Arsenal event. No SQL injection vector remains in any of the 3 workflow files.
 
-### Risk 2 (FIXED) — Over-conditioned table detection
+### Risk 2 (FIXED): Over-conditioned table detection
 
 **Threat:** Step 1 check `if (result && result.table && (result.sql_required || result.materialized))` requires BOTH `result.table` AND (`sql_required` OR `materialized`). If a future MCP response returns just `{table: "...", rowCount: N}` without the `sql_required` flag, the check fails and falls through to the empty-fallback branch.
 
-**Fix:** Simplified to `if (result && result.table)`. If a table name is provided, use it. Robust to response-shape variation. Applied in all 3 workflow Step 1s.
+**Fix:** Simplified to `if (result && result.table)`. If a table name is provided, use it. Handles response-shape variation. Applied in all 3 workflow Step 1s.
 
-### Risk 3 (FIXED) — Incomplete walks silently classified as `real`
+### Risk 3 (FIXED): Incomplete walks silently classified as `real`
 
 **Threat:** If 50 of 60 constituents fail their `getPredictionOrderbook` call (timeout, transient error), the basket sum is incomplete. For sell-side gaps this biases the result low; for buy-side it biases high. A real signal with one missing constituent could be misclassified as `trap`, or a marginal one as `real`, with no indication to the operator.
 
 **Fix:** Each classified event now includes `walked_constituents` and `walk_complete: walkedConstituents === ev.n_constituents`. Classification conservative: incomplete walks (`walk_complete === false`) classify as `marginal` regardless of gap. Applied in Layer 1 (surfacer) and Layer 2 (tier filter).
 
-### Risk 4 (KNOWN LIMITATION, NOT FIXED) — `kv.get` JSON parse not wrapped in try/catch
+### Risk 4 (KNOWN LIMITATION, NOT FIXED): `kv.get` JSON parse not wrapped in try/catch
 
 **Threat:** Step 2/3 read `kv.get("<prefix>:current_table")` and do `JSON.parse(tableMeta.value || tableMeta)`. If the KV value is corrupted (manual edit, partial write from a prior failed run, schema drift), JSON.parse throws and the workflow step crashes mid-execution.
 
@@ -91,11 +91,11 @@ One known limitation is explicitly documented rather than fixed (matches publish
 
 **Mitigation:** Flagged for an operator's awareness. One-line fix per workflow: wrap the `JSON.parse(...)` in `try { ... } catch { tableName = "<default>" }`.
 
-### Risk 5 (NOT A BUG) — Recipe schedules 5 min apart
+### Risk 5 (NOT A BUG): Recipe schedules 5 min apart
 
 **Why not a bug:** Layer 1 recipe at 14:00 UTC, Layer 2 recipe at 14:05 UTC. Each workflow uses an auto-registered table name unique per call (`fetchPolymarketData_<hash>`). KV keys are namespaced per layer (`negrisk:*` vs `voltier:*`). No collision possible.
 
-### Risk 6 (DEFERRED) — Workflow runtime `inputs` aren't injected into `code`
+### Risk 6 (DEFERRED): Workflow runtime `inputs` aren't injected into `code`
 
 **Pattern observed in `polymarket-market-hygiene-scan@latest.ts`:** declares `inputs: [{name:"limit", default:500}]` but the code hardcodes `const limit = 500`. Same pattern used in our 3 workflows.
 
@@ -103,7 +103,7 @@ One known limitation is explicitly documented rather than fixed (matches publish
 
 ---
 
-## Pass 3 — TypeScript parse validation
+## Pass 3: TypeScript parse validation
 
 After all logic fixes, ran the joined `code: [...].join("\n")` arrays through the TypeScript parser to catch any escape/quote/syntax errors introduced by the array-string construction.
 
@@ -132,18 +132,18 @@ After all logic fixes, ran the joined `code: [...].join("\n")` arrays through th
 
 All 3 workflow files parse as valid TypeScript at both the outer-file level (defineWorkflow call structure) and the inner step-code level (each `.join("\n")` produces syntactically valid TS).
 
-This does NOT prove the code runs correctly in Gina's `defineWorkflow` runtime — that requires actually installing and running in the runtime, which we don't have access to. It DOES prove that:
+This does NOT prove the code runs correctly in Gina's `defineWorkflow` runtime, that requires actually installing and running in the runtime, which we don't have access to. It DOES prove that:
 
 - No escape character was misplaced when constructing the array strings.
 - No string was unclosed or had an unmatched quote.
 - No control flow construct is unterminated.
 - The wrapped TS compiles for parse-checking; the only diagnostics we suppress are type errors (acceptable, since the runtime globals like `callTool` aren't typed in our wrapper).
 
-**Validation script:** `/tmp/ts-validate/validate.mjs` — extracted each `code: [...].join("\n")` block via AST walk, joined the strings, wrapped in `async function _step() { ... }`, parsed via `ts.createSourceFile`, reported `parseDiagnostics`. Re-runnable if any workflow TS is edited.
+**Validation script:** `/tmp/ts-validate/validate.mjs`, extracted each `code: [...].join("\n")` block via AST walk, joined the strings, wrapped in `async function _step() { ... }`, parsed via `ts.createSourceFile`, reported `parseDiagnostics`. Re-runnable if any workflow TS is edited.
 
 ---
 
-## Pass 4 — live workflow execution in Gina's actual runtime
+## Pass 4: live workflow execution in Gina's actual runtime
 
 After Pass 3 confirmed parse-correctness, we installed the workflow into Gina's workflow runtime by writing the TS file to `/workspace/automations/workflows/<id>@latest.ts` and running it via the published `workflow validate` and `workflow run` commands.
 
@@ -188,7 +188,7 @@ The `fetch_and_register` step:
 
 1. Skips trying to fetch inside the workflow (which crashes).
 2. Discovers the latest auto-registered `fetchPolymarketData_<hash>` table via `SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'fetchPolymarketData_%' ORDER BY ROWID DESC LIMIT 1`.
-3. Aliases that table to `polymarket_negrisk_raw` via `CREATE TABLE ... AS SELECT * FROM <source> WHERE rowid IN (SELECT MAX(rowid) FROM <source> GROUP BY market_id)` — the dedup-by-`market_id` is critical because the host tool **appends** to its auto-registered table across calls in the same session, so the same market can appear multiple times with stale prices.
+3. Aliases that table to `polymarket_negrisk_raw` via `CREATE TABLE ... AS SELECT * FROM <source> WHERE rowid IN (SELECT MAX(rowid) FROM <source> GROUP BY market_id)`, the dedup-by-`market_id` is critical because the host tool **appends** to its auto-registered table across calls in the same session, so the same market can appear multiple times with stale prices.
 
 ### Operator setup (one-time per session / refresh)
 
@@ -202,7 +202,7 @@ This auto-registers `fetchPolymarketData_<hash>` with `event_slug` populated. Th
 
 ### Verified data path
 
-We confirmed by directly querying the aliased `polymarket_negrisk_raw` table that the dedup is correct and the World Cup data is intact: `world-cup-winner: n=60, sum_yes=1.027, ev_vol=$1.30B` — exactly the build-day finding.
+We confirmed by directly querying the aliased `polymarket_negrisk_raw` table that the dedup is correct and the World Cup data is intact: `world-cup-winner: n=60, sum_yes=1.027, ev_vol=$1.30B`, exactly the build-day finding.
 
 ### Real workflow runs in Gina's runtime
 
@@ -275,11 +275,11 @@ Traps: 0
 - **Pass 3 TypeScript parse:** 0 syntax errors across 11 steps.
 - **Pass 4 live runtime structural:** confirmed 3 steps execute in Gina's runtime.
 - **Pass 5 live runtime end-to-end (this pass):** 2 additional bugs (table dedup, sequential walk timeout). Both fixed. Workflow now produces real signal end-to-end.
-- **Known limitations:** 1 (kv.get JSON.parse not wrapped in try/catch; matches published pattern). 1 (`fetchPolymarketData({dataset:"events"})` not callable via callTool inside workflow runtime — worked around via operator chat setup + sqlite_master discovery).
+- **Known limitations:** 1 (kv.get JSON.parse not wrapped in try/catch; matches published pattern). 1 (`fetchPolymarketData({dataset:"events"})` not callable via callTool inside workflow runtime, worked around via operator chat setup + sqlite_master discovery).
 
 **The pack now provably runs end-to-end in Gina's runtime and produces a real arbitrage signal on the live World Cup event. Run ID `run_mpsypyxhgnixg0` is verifiable in the operator's run history.**
 
-### Pass 6 — Plug-and-play self-bootstrap (no operator setup)
+### Pass 6: Plug-and-play self-bootstrap (no operator setup)
 
 The earlier successful runs required a one-line operator setup chat command to pre-populate the `fetchPolymarketData_*` table. For starter-pack-grade quality, this gate must be removed. We replaced the discovery-only logic in Step 1 with a self-bootstrap pattern:
 
@@ -342,41 +342,41 @@ Real signals: 1
 
 **The pack now installs and produces real signals in two commands with zero operator-side setup. Both layers' run IDs (`run_mpsyz2s9n04sjb` and `run_mpsz2ui80f76te`) are verifiable in the operator's workflow run history.**
 
-## Pass 7 — Pre-send adversarial sweep on the executor (2026-05-31)
+## Pass 7: Pre-send adversarial sweep on the executor (2026-05-31)
 
-After Layers 1+2 were verified live, the executor (Layer 3) had only been parse-validated and structurally reviewed — it was never live-tested because it depends on signals from the upstream layers. A final adversarial sweep before sending found three executor-specific bugs that would have surfaced on first live run.
+After Layers 1+2 were verified live, the executor (Layer 3) had only been parse-validated and structurally reviewed, it was never live-tested because it depends on signals from the upstream layers. A final adversarial sweep before sending found three executor-specific bugs that would have surfaced on first live run.
 
-### Bug 7 (FIXED) — `evaluate_signals` → `risk_gate` pipeline break
+### Bug 7 (FIXED): `evaluate_signals` → `risk_gate` pipeline break
 
 **Threat:** `risk_gate` reads opportunities from `executor:last_opportunities` KV (line 147) AND `/workspace/scratch/executor_opportunities.json` file (line 125). `evaluate_signals` never wrote either. The step returned opportunities via `export default { opportunities }`, but our workflow convention passes data between steps via fs file or KV write (mirroring `polymarket-market-hygiene-scan@latest.ts`), not via the export return.
 
-**Severity:** CRITICAL — would produce zero allowed intents on every run, even when the upstream layers fired clean real signals. The executor would silently idle indefinitely.
+**Severity:** CRITICAL, would produce zero allowed intents on every run, even when the upstream layers fired clean real signals. The executor would silently idle indefinitely.
 
 **Bypass attempt:** Crafted a valid signal payload and ran the workflow mentally through evaluate_signals → risk_gate. The risk_gate `evalState.opportunities || []` fallback returned empty array on every trial because the KV/file reads found nothing.
 
 **Fix:** `evaluate_signals` now writes `{ opportunities, timestamp }` to BOTH the KV key (`executor:last_opportunities`) and the file (`/workspace/scratch/executor_opportunities.json`). Defense in depth: either read path now works.
 
-### Bug 8 (FIXED) — Empty-bid-book throttle not gated
+### Bug 8 (FIXED): Empty-bid-book throttle not gated
 
-**Threat:** A signal can be classified `real` with `walk_complete: true` and `gap_at_500_bp >= 50` while still having a constituent with `throttle.maxFillable === 0` (e.g. the build-day New Zealand World Cup constituent — empty bid book). If the executor opens such a basket, all legs except the zero-depth one fill, leaving persistent mark-to-market exposure on the stuck leg. The basket cannot reach convergence.
+**Threat:** A signal can be classified `real` with `walk_complete: true` and `gap_at_500_bp >= 50` while still having a constituent with `throttle.maxFillable === 0` (e.g. the build-day New Zealand World Cup constituent, empty bid book). If the executor opens such a basket, all legs except the zero-depth one fill, leaving persistent mark-to-market exposure on the stuck leg. The basket cannot reach convergence.
 
-**Severity:** MEDIUM — depends on whether the upstream classifier surfaces such signals (the build-day surfacer did flag the World Cup with throttle.maxFillable=0 because the non-throttle legs cleared $500/mkt with gap > 50 bp).
+**Severity:** MEDIUM, depends on whether the upstream classifier surfaces such signals (the build-day surfacer did flag the World Cup with throttle.maxFillable=0 because the non-throttle legs cleared $500/mkt with gap > 50 bp).
 
-**Bypass attempt:** Crafted signal with `throttle: { slug: "evil", maxFillable: 0 }`. The new filter at evaluate_signals line 98: `if (sig.throttle && Number(sig.throttle.maxFillable) === 0) continue` rejects it. Tried variant payloads (`maxFillable: "0"`, `throttle: null`, missing throttle field) — all behave correctly: string "0" coerces and rejects, null/missing falls through (uniformly-liquid basket case, acceptable).
+**Bypass attempt:** Crafted signal with `throttle: { slug: "evil", maxFillable: 0 }`. The new filter at evaluate_signals line 98: `if (sig.throttle && Number(sig.throttle.maxFillable) === 0) continue` rejects it. Tried variant payloads (`maxFillable: "0"`, `throttle: null`, missing throttle field), all behave correctly: string "0" coerces and rejects, null/missing falls through (uniformly-liquid basket case, acceptable).
 
 **Fix:** `evaluate_signals` rejects opportunities whose throttle constituent reports `maxFillable === 0`. Documented inline.
 
-### Bug 9 (FIXED) — dryRun P&L estimator underweights multi-cycle positions
+### Bug 9 (FIXED): dryRun P&L estimator underweights multi-cycle positions
 
 **Threat:** The dryRun P&L estimator at `monitor_and_close` computed `pnlBp = entrySum - currentSum` (sell side). But `entrySum` was sourced from `position.last_seen_sum_yes`, which was OVERWRITTEN every cycle with the new `currentSum`. So on cycle 2+, the "entry" became "previous cycle's mark", and P&L only reflected the last cycle's gap closure, not the total entry-to-close convergence.
 
-**Severity:** MEDIUM — affects dryRun reporting accuracy (would have shown smaller estimated P&L than real entry-to-close convergence). Does not affect live trading directly (live submission is commented out), but misleads operators reviewing dry-run proofs to gauge expected economics.
+**Severity:** MEDIUM, affects dryRun reporting accuracy (would have shown smaller estimated P&L than real entry-to-close convergence). Does not affect live trading directly (live submission is commented out), but misleads operators reviewing dry-run proofs to gauge expected economics.
 
 **Bypass attempt:** Walked through a cycle 1 / cycle 2 / cycle 3 sequence mentally. Cycle 1: entry sum_yes 1.03, current 1.025, last_seen overwritten to 1.025. Cycle 2: position.last_seen_sum_yes (= 1.025), current 1.00, pnl = (1.025-1.00)*10000 = 250 bp. True entry-to-close should have been (1.03 - 1.00)*10000 = 300 bp. Confirmed underestimation.
 
 **Fix:** Position state now tracks `entry_sum_yes` separately at opening (never overwritten) alongside `last_seen_sum_yes` (mark-to-market, updated each cycle). The P&L estimator reads `position.entry_sum_yes` with `last_seen_sum_yes` as backwards-compatible fallback. Field rename `estimated_pnl_usd → estimated_pnl_usd_gross` makes explicit that this is gross basket convergence, not net of fees/rebates/AS.
 
-### Design clarification (not a bug, but worth flagging) — recipe inputs vs workflow constants
+### Design clarification (not a bug, but worth flagging): recipe inputs vs workflow constants
 
 The executor recipe documents `dryRun`, `makerOnly`, `makerLimitPriceOffsetBp`, and `notionalUsdOverride` as parameters. The workflow code hardcodes all four (lines 187-196 with new clarifying comment). This is intentional defense-in-depth: live promotion requires explicit edits to the workflow TS file, not just a recipe-input change. Comment added inline so any operator reviewing the code can see the chosen design.
 
@@ -398,13 +398,13 @@ The executor recipe documents `dryRun`, `makerOnly`, `makerLimitPriceOffsetBp`, 
 | workflow | initial validation | red-team passes | TS parse | live workflow run | overall |
 |---|---|---|---|---|---|
 | negrisk-event-arbitrage-surfacer (scanner) | ✅ fixed | ✅ injection eliminated | ✅ all 3 steps parse | ✅ **runs in Gina's actual workflow runtime** | ✅ structural; data-shape constraint identified |
-| volume-tier-trap-filter (filter) | ✅ fixed | ✅ injection eliminated | ✅ all 3 steps parse | n/a — same runtime constraint applies; not separately re-run | ✅ structural |
-| negrisk-maker-executor (executor) | n/a — consumes KV from upstream | ✅ structurally safe by design | ✅ all 5 steps parse | n/a — depends on upstream signals which require the event-grouping question to be resolved first | ✅ structural |
+| volume-tier-trap-filter (filter) | ✅ fixed | ✅ injection eliminated | ✅ all 3 steps parse | n/a, same runtime constraint applies; not separately re-run | ✅ structural |
+| negrisk-maker-executor (executor) | n/a, consumes KV from upstream | ✅ structurally safe by design | ✅ all 5 steps parse | n/a, depends on upstream signals which require the event-grouping question to be resolved first | ✅ structural |
 
 ## Honest scope of validation
 
 - The per-tool calls (`fetchPolymarketData`, `getPredictionOrderbook`, `sql`, `host-tools`) were exercised directly against the live Gina MCP.
-- The workflow steps were NOT executed inside the actual `defineWorkflow` runtime — the bash sandbox available for testing doesn't include the workflow runner. We validated the logic each step performs by running its equivalent shell commands and inspecting the responses, plus parsed every step's joined code with the TypeScript parser.
+- The workflow steps were NOT executed inside the actual `defineWorkflow` runtime, the bash sandbox available for testing doesn't include the workflow runner. We validated the logic each step performs by running its equivalent shell commands and inspecting the responses, plus parsed every step's joined code with the TypeScript parser.
 - The KV pass-between-steps mechanism (`kv.set("<prefix>:current_table", ...)` in Step 1, `kv.get` in later steps) is not separately validated end-to-end. The KV API is used identically to `polymarket-market-hygiene-scan@latest.ts` which is shipped in production.
 - The executor's `tradePredictionMarket` and `closePredictionPosition` calls are intentionally commented out in the as-shipped artifact (defense-in-depth). The dryRun path is validated; the live submission path requires explicit operator-arming as documented in the executor's strategy MD and recipe MD.
 
@@ -413,4 +413,4 @@ The executor recipe documents `dryRun`, `makerOnly`, `makerLimitPriceOffsetBp`, 
 - **Pass 1:** 2 bugs (silent fail bug A: empty table; silent fail bug B: non-negRisk false positives). Both fixed.
 - **Pass 2 red-team:** 3 bugs (SQL injection vector, over-conditioned table detection, incomplete-walk misclassification). All fixed.
 - **Pass 3 TypeScript parse:** 0 syntax errors found across 11 steps in 3 workflow files.
-- **Known limitations:** 1 (kv.get JSON.parse not wrapped in try/catch — matches published pattern).
+- **Known limitations:** 1 (kv.get JSON.parse not wrapped in try/catch, matches published pattern).

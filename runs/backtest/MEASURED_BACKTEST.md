@@ -1,4 +1,4 @@
-# Measured-fill maker-yield backtest — real Polymarket CLOB trade tape
+# Measured-fill maker-yield backtest: real Polymarket CLOB trade tape
 
 This swaps Pack 2's hand-set `captureFraction` for measured fill behaviour and
 measured adverse selection, on the real `data-api.polymarket.com/trades` tape for
@@ -45,7 +45,7 @@ so the harness can say "this loses money."
 Per-name (optimistic, 5m): France +46.0 bp/\$ (1050 fills, 37.5% fill-rate, +$11.83/day);
 Spain +47.3 bp/\$ (909 fills, 35.8%, +$10.27/day). Window: France 5.97 d / 3665
 YES trades, Spain 5.45 d / 3469. (The API caps historical depth at offset ≤ 3000,
-so ~6 days is the measurable tape — annualisation below carries that caveat.)
+so ~6 days is the measurable tape, annualisation below carries that caveat.)
 
 - **optimistic** = any taker print at-or-through our resting price fills us (we win
   the touch queue) → UPPER bound on fills.
@@ -59,7 +59,7 @@ so ~6 days is the measurable tape — annualisation below carries that caveat.)
    where on this bracket reality sits; nor does this harness fully resolve it
    (the trade tape has no resting-book/queue data). What it *does* establish:
 
-2. **Adverse selection on the favourites is small** — 1–24 bp/\$ measured across
+2. **Adverse selection on the favourites is small**, 1–24 bp/\$ measured across
    horizons, well under the ~47 bp rebate (18.75 bp) + structural half-spread
    (≈27 bp on a 1-tick 17¢ book) buffer. The fear that AS dominates the maker is
    **not** borne out for France/Spain. The mean-price≥0.15 eligibility filter is
@@ -67,7 +67,7 @@ so ~6 days is the measurable tape — annualisation below carries that caveat.)
 
 3. **The binding constraint is fill volume / queue, because the strategy only
    *joins* the touch (no price improvement).** A touch-joiner sits behind the
-   existing queue and fills disproportionately when the level clears — the
+   existing queue and fills disproportionately when the level clears, the
    adverse (sweep-leaning) case. So realistic capture is a fraction of the
    optimistic $21/day, and the sweep tail is net-negative.
 
