@@ -49,18 +49,18 @@ one (~1.9%) barely beats just holding USDC, before you even count the fat tail.
 
 This is the part that matters most for being honest about the strategy.
 
-**Measurable on this venue:** the **overround** `kappa = sum_yes - 1` (1.9-2.4% on build day). At
-`gamma = 1`, the per-name sell edge is exactly `price_i * kappa / (1 + kappa)`, so the tail edge as a
-fraction of shorted notional is `kappa / (1 + kappa)` = ~1.9%. This is **algebraic, not behavioural**:
-*every* constituent (favourite and longshot alike) carries the same fractional overround. It is the
-maker spread — the same edge Pack 2 already harvests two-sided. It is **not** distinctively FLB.
+What I can measure on this venue is the overround, `kappa = sum_yes - 1` (1.9-2.4% on build day). At
+`gamma = 1` the per-name sell edge is exactly `price_i * kappa / (1 + kappa)`, so the tail edge as a
+fraction of shorted notional is `kappa / (1 + kappa)`, about 1.9%. That's algebra, not behaviour: every
+constituent, favourite and longshot alike, carries the same fractional overround. It's the maker spread,
+the same edge Pack 2 already collects two-sided. It is not a favourite-longshot edge.
 
-**NOT measurable on this venue:** the behavioural FLB premium — the `gamma > 1` increment. Quantifying
-it requires the mapping from market price to realised resolution frequency, which needs **historical
-resolved-market data the host data layer does not expose** (it only ever returns open/active markets;
-see the probe log in TEST_RESULTS_FLB.md). We therefore anchor `gamma` to the published literature
-(classic FLB direction is robust; magnitude is study- and domain-dependent) and report three scenarios
-rather than asserting one.
+What I can't measure on this venue is the behavioural part, the `gamma > 1` increment. To pin it down you
+need the mapping from market price to realised resolution frequency, and that needs historical resolved
+markets the host data layer never hands you (it only ever returns open/active ones; see the probe log in
+TEST_RESULTS_FLB.md). So I anchor `gamma` to the published literature, where the direction of classic FLB
+is well-established but the magnitude depends on the study and the sport, and report three scenarios
+instead of betting on one.
 
 So the distinctive edge here (everything above the gamma=1 row) is literature-anchored, not verified on
 this venue. I gate eligibility on the measurable floor only.
@@ -105,27 +105,27 @@ fat tail, and the part that makes it distinctive is unverified on this venue.
 
 ## 8. Verdict (MEASURED backtest): SCOPE-DOWN / kill as a capital strategy
 
-The central/aggressive rows above are **sim-/literature-derived (the `gamma>1` prior). They are now
-superseded by measurement.** The FLB calibration was run against the real settled-outcome tape — 3,319
-constituents from 215 resolved negRisk events, priced 24/72/168h pre-resolution from CLOB
+The central and aggressive rows above are sim- and literature-derived, the `gamma>1` prior, and the
+measurement now supersedes them. I ran the FLB calibration against the real settled-outcome tape: 3,319
+constituents from 215 resolved negRisk events, priced 24/72/168h before resolution from CLOB
 `prices-history`, run locally (full detail: [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)).
-It is a calibration test (net positive only if realized win-rate is below price), so it returns losses
-when the bias is absent — and it did (−0.85 at 24h, −3.67 at 168h).
+It's a calibration test, so it only comes out positive if the realized win-rate sits below the price, and
+it returns losses when the bias isn't there. It did (−0.85 at 24h, −3.67 at 168h).
 
-**Measured result: no statistically significant edge at the 0.01–0.05 tail.** Miscalibration ~±1pp and
-**sign-unstable across horizons** (−0.43 / +0.76 / −0.67 pp at 24/72/168h); **every 90% bootstrap CI
-straddles zero** (n = 195–543). The measured FLB strength at this band is **`gamma ≈ 1`** (overround
-only), not the 1.10–1.20 assumed above. The extreme tail (<0.01) is **reverse-biased** — vindicating the
-a-priori `longshotFloor = 0.01`.
+The measured result is no statistically significant edge at the 0.01–0.05 tail. Miscalibration is about
+±1pp and the sign flips across horizons (−0.43 / +0.76 / −0.67 pp at 24/72/168h), and every 90% bootstrap
+CI crosses zero (n = 195–543). Measured, the FLB strength at this band is basically `gamma ≈ 1`, the
+overround on its own, not the 1.10–1.20 I'd assumed. The extreme tail (<0.01) is biased the wrong way,
+which is what vindicates the a-priori `longshotFloor = 0.01`.
 
-The **only structural number that survives is the gamma=1 overround floor (~0.27% annualised on
-collateral)** — maker-spread capture (already Pack 2's edge), not FLB, in front of a ~13–17% per-event
-full-collateral tail. **No measured positive net justifies capital.**
+The only structural number that survives is the gamma=1 overround floor (~0.27% annualised on collateral),
+and that's maker-spread capture, already Pack 2's edge, sitting in front of a ~13–17% per-event
+full-collateral tail. No measured positive net justifies capital.
 
-**Recommendation:** keep the scanner (research surface) and executor (dry-run reference); the methodology
-is sound and the floor is measurement-vindicated. **Do not allocate capital.** This verdict now rests on
-a real backtest matching Pack 2's standard — a measured tail edge indistinguishable from zero — not on
-"unmeasurable."
+So: keep the scanner as a research surface and the executor as a dry-run reference; the method is sound
+and the floor held up under measurement. Don't allocate capital. The verdict now rests on a real backtest
+that meets Pack 2's standard, a measured tail edge you can't tell apart from zero, rather than on
+"we couldn't measure it."
 
 ## Backlinks
 
