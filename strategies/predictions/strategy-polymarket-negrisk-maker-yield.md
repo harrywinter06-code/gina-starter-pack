@@ -40,11 +40,11 @@ tags: [strategy, polymarket, negrisk, maker, yield, rebate, adverse-selection, d
 
 # Polymarket NegRisk Maker Yield
 
-A maker-rebate yield strategy on Polymarket negRisk constituent markets, ported and refined from polymarket-edge's `WORLD_CUP_MM.md` analysis.
+A maker-rebate yield strategy on Polymarket negRisk markets, ported from polymarket-edge's `WORLD_CUP_MM.md` and refined along the way.
 
 ## What the underlying research says
 
-`WORLD_CUP_MM.md` simulated maker-rebate capture across all 48 constituent markets of the 2026 FIFA World Cup negRisk event over a 30-day historical CLOB-trade window. Three adverse-selection (AS) scenarios:
+`WORLD_CUP_MM.md` simulated maker-rebate capture across all 48 markets of the 2026 World Cup negRisk event, over a 30-day window of historical CLOB trades. It ran three adverse-selection (AS) scenarios:
 
 | scenario | AS fraction of half-spread | 50-day projected basket P&L |
 |---|---|---|
@@ -52,15 +52,15 @@ A maker-rebate yield strategy on Polymarket negRisk constituent markets, ported 
 | moderate | 0.5 (textbook MM literature) | **+$126** |
 | informed | 1.0 (pessimistic) | **−$12,120** |
 
-**Breakeven at AS = 0.505 × half-spread — knife-edge.** The basket clears positive at moderate AS only because the top-5 favourites (France, Spain, England, Argentina, Brazil) carry +$752 of positive net while **41 of 48 constituent markets are net-negative individually** (totalling −$626).
+Breakeven sits at AS = 0.505 × half-spread, which is a knife-edge. The basket only clears positive at moderate AS because the top-5 favourites (France, Spain, England, Argentina, Brazil) carry +$752 between them, while 41 of the 48 markets actually lose money on their own (−$626 in total).
 
-The structural argument from `WORLD_CUP_MM.md` §82-91: long-tail markets (mean price $0.01–0.03) have 5-min drifts that are several percent of price — the half-spread fraction is huge — so the 18.75 bp rebate cannot clear AS. Favourite markets (mean price $0.18–0.25) have *lower* spread-as-fraction-of-price and clear the rebate cleanly.
+The reason (§82-91): the long-tail markets (mean price $0.01–0.03) move several percent of their price in five minutes, so the half-spread is a huge fraction of price and the 18.75 bp rebate can't cover the adverse selection. The favourites (mean price $0.18–0.25) have a much smaller spread relative to price, so the rebate clears cleanly.
 
 ## Pack 2's methodological refinement
 
-`WORLD_CUP_MM.md` explicitly flagged its biggest limitation (§95–96): *"AS model is the load-bearing assumption. Realised price drift is a proxy for spread, not the spread itself. A true bid-ask spread series would give a tighter estimate."* Pack 2 fixes this by using the **depth-walk-derived bid-ask spread directly** instead of the drift proxy.
+`WORLD_CUP_MM.md` was upfront about its biggest weakness (§95–96): *"AS model is the load-bearing assumption. Realised price drift is a proxy for spread, not the spread itself. A true bid-ask spread series would give a tighter estimate."* Pack 2 fixes exactly that, using the bid-ask spread straight from the depth walk instead of the drift proxy.
 
-The depth-walk infrastructure built for Pack 1 (`negrisk-event-arbitrage-surfacer`) already calls `getPredictionOrderbook` per constituent at $50/$500/$5,000 sizes. From those calls we extract the actual orderbook half-spread:
+The depth walk I built for Pack 1 (`negrisk-event-arbitrage-surfacer`) already calls `getPredictionOrderbook` on each constituent at $50/$500/$5,000. I pull the real orderbook half-spread straight out of those calls:
 
 ```
 quote_half_spread = (avgAsk_at_50 − avgBid_at_50) / 2
@@ -68,11 +68,11 @@ mid_price = (avgAsk_at_50 + avgBid_at_50) / 2
 quote_half_spread_fraction = quote_half_spread / mid_price
 ```
 
-This is the actual cost a maker pays to post inside the spread — not a noisy proxy from realised price drift. The three AS scenarios from `WORLD_CUP_MM.md` then scale this directly.
+That's the actual cost of posting inside the spread, not a noisy stand-in from price drift. The three AS scenarios from `WORLD_CUP_MM.md` then scale off it directly.
 
 ## The eligibility filter (principled, not post-hoc)
 
-`WORLD_CUP_MM.md`'s per-market breakdown shows the structural cutoff at mean price ~$0.15: above this floor, the spread-as-fraction-of-price is low enough that rebate clears AS at moderate scenario; below it, the long tail loses. Pack 2 codifies this as a **filter applied IN ADVANCE OF capital deployment** (not as post-hoc selection on observed P&L).
+`WORLD_CUP_MM.md`'s per-market breakdown puts the cutoff at mean price ~$0.15: above it, the spread is a small enough fraction of price that the rebate clears AS in the moderate scenario; below it, the long tail loses. Pack 2 writes this down as a filter you apply before deploying any capital, not a selection made after seeing the P&L.
 
 The breakeven math is exact. Net P&L per unit notional = rebate_rate − AS_fraction × spread_fraction. At maker rebate 18.75 bp (= 0.001875) and moderate AS (fraction = 0.5), breakeven spread_fraction = 0.001875 / 0.5 = **0.00375 (0.375%)**. Above this, moderate-AS net is negative.
 
@@ -82,9 +82,9 @@ ELIGIBILITY: mean_price ≥ 0.15 AND quote_half_spread_fraction ≤ 0.00375
 
 The mean_price floor (0.15) is the structural cutoff from `WORLD_CUP_MM.md` §82-91. The spread_fraction ceiling (0.00375) is the analytic moderate-AS-breakeven from `polymarket_mm_sim.py.breakeven_half_spread_fraction`. Constituents passing both are eligible-for-positive-yield at moderate AS by direct math; constituents failing either are filtered out before any maker quoting.
 
-This is a critical disclosure-grade point: **the filter is principled (selects on observable market structure + analytic breakeven, not on P&L), so it does not constitute in-sample overfitting.**
+This matters for honesty: the filter keys off observable market structure and an analytic breakeven, not on P&L, so it isn't in-sample overfitting.
 
-**Theoretical caveat on the quoted-spread proxy:** In competitive market-making equilibrium, the quoted bid-ask spread ≈ 2 × adverse-selection cost. Pack 2 uses the quoted half-spread (depth-walk-derived) as a proxy for AS, while `WORLD_CUP_MM.md` used realised 5-min price drift. Both proxies converge to true AS in equilibrium, but on rebate-positive venues like Polymarket Sports, the quoted spread can be biased *down* (makers post tighter because rebate subsidises sustainable AS coverage). This means the quoted-spread filter may be slightly too permissive — flagging some constituents as eligible when realised AS exceeds the quoted-spread estimate. The three-scenario economic model in `PROFITABILITY_ANALYSIS_MAKER_YIELD.md` accounts for this by reporting naive/moderate/informed AS independently rather than committing to a single AS assumption.
+One caveat on the spread proxy. In a competitive market-making equilibrium the quoted bid-ask spread is about 2× the adverse-selection cost. Pack 2 uses the quoted half-spread from the depth walk as its proxy for AS, where `WORLD_CUP_MM.md` used realised 5-min drift. Both converge to true AS in equilibrium, but on a rebate-positive venue like Polymarket Sports the quoted spread can sit too tight, because the rebate lets makers post inside what the AS would otherwise justify. So the filter may be a touch too permissive, letting through a few names whose realised AS is worse than the quoted spread suggests. The three-scenario model in `PROFITABILITY_ANALYSIS_MAKER_YIELD.md` handles that by reporting naive/moderate/informed AS separately instead of betting on one.
 
 ## Bundle map
 

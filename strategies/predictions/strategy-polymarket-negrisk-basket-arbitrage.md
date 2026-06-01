@@ -42,15 +42,11 @@ tags: [strategy, polymarket, negrisk, arbitrage, depth-aware, dollar-weighted, m
 
 # Polymarket NegRisk Basket Arbitrage
 
-Polymarket negRisk events are groups of mutually-exclusive constituent markets where exactly one outcome resolves YES. In fair pricing the sum of YES probabilities across all constituents must equal $1.00 — selling YES on every constituent guarantees a $1.00 payout from whichever wins. Deviations beyond a fee buffer imply tradeable basket arbitrage, conditional on the basket clearing at meaningful per-constituent depth.
+A Polymarket negRisk event is a group of mutually-exclusive markets where exactly one outcome resolves YES. If they're priced fairly, the YES prices across all of them have to add up to $1.00, because selling YES on every name guarantees a $1.00 payout from whichever one wins. When the sum drifts past a fee buffer there's an arb to take, as long as the basket actually fills at real per-constituent depth.
 
-This strategy implements the full end-to-end pipeline:
+It's a full pipeline in three pieces. The scanner surfaces events where the top-of-book sum-of-yes is off $1.00 and the constituent depth confirms the gap still holds at $500/market. The volume-tier filter then cuts that down to flagship events (≥$1M lifetime volume), applying the count-vs-dollar reframe from polymarket-edge: 63% of the detector's flags are traps by count, but only 0.012% by dollar, because about 96% of the dollar volume sits in one event. The maker executor reads the filtered signals from KV, posts per-constituent maker limit orders under risk caps (per-event capital, daily notional, a daily-loss kill-switch), watches the basket converge, closes within `closeBandBp` of fair value, and tracks realised P&L.
 
-1. **Scanner** — surfaces events whose top-of-book sum-of-yes deviates from $1.00 and whose constituent depth verifies the gap holds at $500/market.
-2. **Volume-tier filter** — narrows scanner output to flagship-tier (≥ $1M event lifetime volume) events, implementing the count-vs-dollar reframe from polymarket-edge (63% of detector flags are traps by count but only 0.012% by dollar, because ~96% of dollar volume concentrates in one event).
-3. **Maker executor** — consumes filtered signals from KV, places per-constituent maker limit orders under risk caps (per-event capital, daily notional, daily-loss kill-switch), monitors basket convergence, closes within `closeBandBp` of fair value, tracks realised P&L.
-
-Each layer ships as an independent workflow + recipe so operators can install just the surfacer for research, the surfacer + filter for tighter signal selection, or the full pipeline for capital deployment.
+Each layer is its own workflow and recipe, so you can install just the scanner for research, the scanner plus filter for tighter signals, or the whole thing for deploying capital.
 
 ## Bundle map
 
@@ -60,7 +56,7 @@ Each layer ships as an independent workflow + recipe so operators can install ju
 | 2. Volume-tier filter | [`recipe-volume-tier-trap-filter`](../../recipes/predictions/recipe-volume-tier-trap-filter.md) | [`volume-tier-trap-filter`](../../workflows/volume-tier-trap-filter/README.md) |
 | 3. Maker executor | [`recipe-negrisk-maker-executor`](../../recipes/predictions/recipe-negrisk-maker-executor.md) | [`negrisk-maker-executor`](../../workflows/negrisk-maker-executor/README.md) |
 
-The scanner and filter are read/surface only. The executor exposes a trade-capable code path that is `dryRun: true` by default with the actual `managePredictionOrders` submission lines commented out as defense-in-depth.
+The scanner and filter only read and surface. The executor has a trade-capable path, but it defaults to `dryRun: true` and ships with the actual `managePredictionOrders` lines commented out, as a deliberate safety layer.
 
 ## Strategy diagram
 
@@ -124,7 +120,7 @@ flowchart TD
 
 Build-day live observation on the World Cup negRisk event (verified by workflow runs `run_mpsyz2s9n04sjb` and `run_mpsz2ui80f76te`).
 
-**Critical distinction:** the TOB (top-of-book) gross gap and the depth-walked executable gross gap are different numbers. The depth-walked gap is what's executable as a taker walking the book; the TOB gap is what a maker can capture if counterparties cross promptly at posted prices. Per-cycle P&L is bracketed by these anchors.
+One distinction worth being careful about: the top-of-book gross gap and the depth-walked executable gap are two different numbers. The depth-walked gap is what you'd actually get as a taker walking the book; the top-of-book gap is what a maker captures if counterparties cross your posted prices quickly. Per-cycle P&L lands somewhere between those two.
 
 | metric | value |
 |---|---|
@@ -143,9 +139,9 @@ Build-day live observation on the World Cup negRisk event (verified by workflow 
 | Expected cycles/day | 1–3 |
 | Honest banded annualised return on $48K | **+15–40% APR** (Scenario A 10% + Scenario B 70% + Scenario C 20%, see PROFITABILITY_ANALYSIS.md) |
 
-**The maker-only economic constraint is structural, not just a defensive default.** At the depth-walked +57 bp basket gross at $48K Iran-throttled size, a taker pays 75 bp in Sports fees and nets −18 bp = −$86 per cycle. There is no scenario in which this signal is profitable as a taker. The executor's `makerOnly: true` default reflects this.
+Maker-only here is forced by the economics, not just a safety default. At the depth-walked +57 bp basket gross at the $48K Iran-throttled size, a taker pays 75 bp in Sports fees and nets −18 bp, which is −$86 a cycle. There's no version of this signal that makes money as a taker, and that's what `makerOnly: true` is reflecting.
 
-Full economic model with three scenarios (build-day regime persistence / polymarket-edge year-data band / maker-yield-only baseline), sensitivity tables, and risk-management discussion in [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md).
+The full model (three scenarios: build-day regime persistence, the polymarket-edge year-data band, and a maker-yield-only baseline), the sensitivity tables, and the risk discussion are all in [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md).
 
 ## Setup
 

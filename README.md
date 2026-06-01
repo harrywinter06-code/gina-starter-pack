@@ -1,6 +1,6 @@
 # gina-starter-pack
 
-Three complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format. All 17 primitives pass `awesome-gina`'s CI metadata gate (`scripts/validate_primitives.rb`, ported to `runs/validate_primitives_port.py`) — see [`runs/CONFORMANCE.md`](runs/CONFORMANCE.md) for Packs 1–2 (merged-tree run + the one schedule-line fix that was required) and [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md) for Pack 3 (17-entry gate pass + both workflows validated and run live in Gina's runtime; Pack 3 used the canonical `/create`-compatible schedule line from the start, so no fix was needed).
+Three Polymarket strategies for Ask Gina's Predictions vertical, built to drop straight into the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo. All 17 primitives pass awesome-gina's CI metadata gate. I ran it myself: the real gate is `scripts/validate_primitives.rb`, and I ported it to `runs/validate_primitives_port.py` so I could check the merged tree without Ruby. [`runs/CONFORMANCE.md`](runs/CONFORMANCE.md) has the run for Packs 1–2, plus the one schedule-line fix they needed. [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md) covers Pack 3, which got the schedule line right from the start and validated and ran live in Gina's runtime with no fix.
 
 | pack | strategy | action | trigger | annualised banded estimate |
 |---|---|---|---|---|
@@ -8,13 +8,15 @@ Three complementary end-to-end Polymarket strategies for the Predictions vertica
 | Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **sim:** +100–200% APR on $250–500 (small-base artifact). **Measured** (real CLOB tape, [`runs/backtest/`](runs/backtest/MEASURED_BACKTEST.md)): small-positive ~$100s–$1k/yr, capacity-bound, queue-adverse tail negative → **scope-down** |
 | Pack 3 | **NegRisk Favourite-Longshot Bias Harvest** | Short the overpriced longshot tail (BUY NO) when sum_yes ≈ 1 but the internal allocation is biased | Daily (held to resolution) | **VERDICT: scope-down / kill — research / dry-run only, do NOT allocate capital.** Measured on real tape (215 resolved negRisk events, [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)): **no significant tail edge** — miscalibration sign-flips by horizon, all bootstrap CIs straddle 0; extreme tail is reverse-biased (vindicates the 0.01 floor). Only structural component is the overround (~0.3% APR) — maker-spread, not FLB |
 
-The three packs fire on **orthogonal mispricings** across the negRisk-event lifecycle: Pack 1 when sum_yes ≠ 1 (mechanical arb, $10K–$48K episodic), Pack 2 on the bid-ask spread continuously ($250–$1000 standing maker notional), Pack 3 *inside* a basket that sums to ~1 but is internally biased (small diversified satellite). **Pack 3 is by design the most rigorous and least flattering** — measured against the real settled-outcome tape (215 resolved negRisk events) its distinctive favourite-longshot edge at the 0.01–0.05 tail is **not statistically different from zero** (sign-unstable across horizons, all bootstrap CIs straddle 0); only the overround floor is structural, and the extreme tail is reverse-biased (vindicating the 0.01 floor). It demonstrates the discipline of measuring a claimed edge to zero and refusing to dress it up. None of the three APRs is linearly scalable.
+The three target different mispricings, at different points in a negRisk event's life. Pack 1 fires when the constituent YES prices don't sum to 1, a mechanical arb, episodic, $10K–$48K. Pack 2 quotes the bid-ask spread continuously on a few hundred dollars of standing notional. Pack 3 works inside a basket that already sums to ~1 but is biased in how the probability is split across names.
+
+Pack 3 is the one I'd point a sceptic at first, because it's the least flattering. I measured it against the real settled-outcome tape (215 resolved negRisk events) and the favourite-longshot edge at the 0.01–0.05 tail came back at zero: the sign flips depending on how far before resolution you price it, and every bootstrap CI crosses zero. The only piece that survives is the overround, which is just the maker spread, not a behavioural edge. The extreme tail (below 0.01) is actually biased the wrong way, which happens to confirm the 0.01 floor I'd set a priori. I think a backtest that kills its own headline is worth more than three that don't, but you should read it and decide. And none of these APRs scale; they're all capacity-bound.
 
 ## Pack 1 — Polymarket NegRisk Basket Arbitrage
 
-**Polymarket NegRisk Basket Arbitrage** — applies the sum-of-yes = $1.00 fair-pricing invariant to Polymarket negRisk events, depth-walks each candidate's constituents to verify the gap holds at meaningful basket size, narrows to flagship-tier ($≥1M) events via the count-vs-dollar reframe from [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), and exposes a maker-only execution layer with risk caps and an auto kill-switch.
+In a negRisk event exactly one outcome resolves YES, so in fair pricing the constituent YES prices have to sum to $1.00. When they don't, there's an arb. The catch is that a top-of-book gap can vanish the moment you try to fill any size, so Pack 1 depth-walks every candidate before it believes the gap. It only looks at flagship events (≥$1M lifetime volume), which comes out of the count-vs-dollar finding in [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge): most flagged arbs are traps by count but almost none by dollar. Execution is maker-only, under risk caps, with a kill-switch that trips itself.
 
-Decomposes into three install units that mirror the layered pattern in existing `awesome-gina` strategies (e.g. BTC Hourly bundles entry-stop-loss + force-sell):
+It splits into three install units, the same layered shape the existing awesome-gina strategies use (BTC Hourly bundles entry-stop-loss and force-sell the same way):
 
 ```
 [ Polymarket negRisk events ]
@@ -43,9 +45,9 @@ Decomposes into three install units that mirror the layered pattern in existing 
 
 ## Plug-and-play install
 
-`workflow install` → `workflow run` → produces real signal in **~11 seconds with zero operator setup**. The scanner and filter self-bootstrap their data tables on every run (`exec` shells out to `host-tools fetchPolymarketData` at `limit=5`, which auto-registers a SQL table; the workflow discovers the table via `sqlite_master` and dedups by `market_id`).
+Install it, run it, and you get a real signal in about 11 seconds with nothing to set up first. The scanner and filter build their own data table on every run: `exec` shells out to `host-tools fetchPolymarketData` at `limit=5`, which registers a SQL table, and the workflow finds that table through `sqlite_master` and dedups by `market_id`. There's no fixture to load and no first-run that behaves differently from steady state.
 
-Verified on build day, both layers running plug-and-play with no setup:
+Here's both layers running on build day, straight out of the box:
 
 ```
 $ workflow validate negrisk-event-arbitrage-surfacer
@@ -63,7 +65,7 @@ Real signals: 1
 
 ## Why this pack
 
-The existing `awesome-gina` repo has 5 strategies under `strategies/trading/` and ships 4 Polymarket-specific workflows (Hygiene Scan, Signal Scanner, NBA Matchup Edge, Weather Bond Rotator). No `strategies/predictions/` directory exists yet, and none of the existing Polymarket workflows operates at the **event level** — they're per-market hygiene checks and per-market signal ranking. This strategy fills three specific methodology gaps:
+awesome-gina already has 5 strategies under `strategies/trading/` and 4 Polymarket workflows (Hygiene Scan, Signal Scanner, NBA Matchup Edge, Weather Bond Rotator). What it doesn't have is a `strategies/predictions/` directory at all, and nothing that works at the event level. The existing Polymarket workflows check one market at a time or rank single markets; none of them looks across the constituents of a negRisk event the way the no-arb math needs. That's the gap I went after, in three pieces:
 
 | layer | gap filled |
 |---|---|
@@ -73,7 +75,7 @@ The existing `awesome-gina` repo has 5 strategies under `strategies/trading/` an
 
 ## Expected economics (build-day observation)
 
-Computed in detail per `PROFITABILITY_ANALYSIS.md`. Headline live observation from the verified workflow runs:
+The full model is in `PROFITABILITY_ANALYSIS.md`. Here's what the verified workflow runs actually saw:
 
 | metric | observed |
 |---|---|
@@ -87,11 +89,11 @@ Computed in detail per `PROFITABILITY_ANALYSIS.md`. Headline live observation fr
 | Per-cycle P&L, **maker side**, realistic mix (30% TOB / 70% depth-walked) | **+$570** (headline) |
 | Expected annualised return on $48K, honest banded scenario | **+15-40% APR** (full model in PROFITABILITY_ANALYSIS.md) |
 
-The maker-only constraint is structural: at the depth-walked basket gap, taker P&L is negative net of Sports fees. The executor's `makerOnly: true` default reflects an economic reality, not just defensive preference.
+Maker-only isn't a safety preference here, it's forced by the numbers. At the depth-walked gap, once you pay Sports fees the taker side loses money. So `makerOnly: true` is the default because crossing the spread on this signal doesn't work, full stop.
 
 ## Pack 2 — Polymarket NegRisk Maker Yield
 
-**Polymarket NegRisk Maker Yield** — ports the maker-rebate analysis from polymarket-edge's [`WORLD_CUP_MM.md`](https://github.com/harrywinter06-code/polymarket-edge/blob/main/WORLD_CUP_MM.md) into a runnable Gina pack, with a methodological refinement: replace the realised-drift AS proxy with depth-walk-derived bid-ask half-spread, and apply a principled mean-price + spread-fraction eligibility filter that excludes the long-tail of net-negative-under-moderate-AS constituents.
+This takes the maker-rebate analysis from polymarket-edge's [`WORLD_CUP_MM.md`](https://github.com/harrywinter06-code/polymarket-edge/blob/main/WORLD_CUP_MM.md) and makes it a workflow you can actually run on Gina. I changed two things along the way. The original used realised price drift as a stand-in for adverse selection; here I use the bid-ask half-spread straight from the depth walk, which is the real thing rather than a proxy. And I added an eligibility filter on mean price and spread fraction that drops the long tail of names that lose money once adverse selection is even moderate.
 
 Two install units:
 
@@ -117,9 +119,9 @@ Two install units:
 
 ### Pack 2 expected economics (anchored on WORLD_CUP_MM.md)
 
-`WORLD_CUP_MM.md` found the full 48-market World Cup basket at moderate AS = **+$126 over 50 days** (knife-edge positive). 41 of 48 markets were net-negative individually; the top-5 favourites (France, Spain, England, Argentina, Brazil) carried +$752 of positive net.
+`WORLD_CUP_MM.md` put the full 48-market World Cup basket at +$126 over 50 days at moderate adverse selection. That's barely positive, and it's barely positive for a reason: 41 of the 48 markets actually lose money on their own. The whole +$126 is carried by the top-5 favourites (France, Spain, England, Argentina, Brazil), which are worth +$752 between them.
 
-Pack 2's eligibility filter selects the structurally-positive subset BEFORE capital deployment. The filter is **principled** (mean_price + analytic moderate-AS-breakeven) — not post-hoc P&L selection.
+So Pack 2's filter picks out that profitable subset before you put any money down. The thing I care about here is that it filters on market structure (mean price and the breakeven half-spread you can derive analytically), not on which names happened to make money in the sim. It's a rule you could write before seeing any P&L.
 
 | metric | full 48-mkt basket (WORLD_CUP_MM.md) | top-5 eligibility-filtered (Pack 2) |
 |---|---|---|
@@ -129,17 +131,17 @@ Pack 2's eligibility filter selects the structurally-positive subset BEFORE capi
 | Markets net-positive at moderate AS | 7/48 | 5/5 by construction |
 | Headline (measured, real CLOB tape) | — | **~$387/yr absolute on ~$200 standing**, capacity-bound (sim APR % is a small-base artifact, superseded) |
 
-**Pack 2 operates at a different capital scale than Pack 1.** Pack 2 is structurally a small-capital, capacity-bound continuous-yield strategy ($250–500 standing notional) whose meaningful figure is the measured few-hundred-$/yr absolute, not the headline percentage. Pack 1 is a mid-cap episodic basket-arb strategy ($10K–$48K). They are NOT directly comparable per-dollar — they target different parts of the negRisk-event lifecycle. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter from `polymarket_mm_sim.py.breakeven_half_spread_fraction`) AND a complementary capital-scale tier. Pack 2 ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure as Pack 1.
+Pack 2 plays at a different size than Pack 1. It's a small-capital continuous-yield thing, $250–500 of standing notional, and the number that matters is the measured few hundred dollars a year, not the percentage, which looks huge only because the base is tiny. Pack 1 is the mid-cap episodic one ($10K–$48K). Comparing them per dollar doesn't really mean anything; they live in different parts of the same event's life. What Pack 2 adds is the spread-from-depth-walk method, the filter built off `polymarket_mm_sim.py.breakeven_half_spread_fraction`, and a second size tier you can run next to Pack 1. It carries the same defenses and test discipline as Pack 1, and the same blunt scope disclosure.
 
-Full economic model and per-constituent breakeven analysis in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
+Full model and per-constituent breakeven in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 
 ### Pack 2 verification status (honest disclosure)
 
-Pack 2's first six passes are completed at the structural / methodological / adversarial layers (parse-equivalent to Pack 1's verified code; analytic equivalence to `polymarket_mm_sim.py` shown explicitly; 1 bug found and fixed in the pre-send adversarial sweep). Passes 4-5-6 (live Gina runtime verification) are **PENDING operator verification** — the transient JWT used to verify Pack 1's runs expired between Pack 1's ship and Pack 2's build. The operator should run `workflow validate` + `workflow run negrisk-maker-yield-scanner` on first install to complete those passes; full per-pass status in [`runs/TEST_RESULTS_MAKER_YIELD.md`](runs/TEST_RESULTS_MAKER_YIELD.md).
+I'll be straight about where Pack 2 stands. The structural, methodological, and adversarial passes are done: the code parses the same way Pack 1's verified code does, I showed the analytic match to `polymarket_mm_sim.py` line by line, and the pre-send sweep turned up one bug, which I fixed. What's not done is the live-runtime check (passes 4-5-6). The JWT I'd used to run Pack 1 in Gina expired between shipping Pack 1 and building Pack 2, so I couldn't re-run. On first install, run `workflow validate` and `workflow run negrisk-maker-yield-scanner` and you'll close those out. Per-pass detail is in [`runs/TEST_RESULTS_MAKER_YIELD.md`](runs/TEST_RESULTS_MAKER_YIELD.md).
 
 ## Pack 3 — Polymarket NegRisk Favourite-Longshot Bias Harvest
 
-**Polymarket NegRisk Favourite-Longshot Bias Harvest** — harvests the favourite-longshot bias (FLB), described in the prediction-market literature as "the single most robust finding" in the field: within a negRisk basket whose YES prices sum to ~1.0, prices are compressed toward uniform, so the longshot tail is systematically overpriced and the favourite underpriced. Pack 3 shorts the overpriced longshot tail. It fires precisely where Packs 1 and 2 are silent — when `sum_yes ≈ 1` (no mechanical arb) but the internal allocation is biased.
+This one goes after the favourite-longshot bias, which the prediction-market literature calls about the most replicated finding there is. The idea: inside a negRisk basket whose YES prices already sum to ~1.0, the prices get squeezed toward each other, so the longshots end up too expensive and the favourites too cheap. Pack 3 shorts the overpriced longshot tail. It works exactly where Packs 1 and 2 see nothing: the basket sums to ~1, so there's no mechanical arb, but the split across names is still off.
 
 Two install units:
 
@@ -165,7 +167,7 @@ Two install units:
 
 ### Pack 3 honest verdict (read before the economics)
 
-On the build-day flagship basket (`world-cup-winner`, 48 priced constituents, ~46 days to resolution), the honest **return on collateral deployed** (not the flattering return-on-shorted-notional) is:
+On the build-day flagship basket (`world-cup-winner`, 48 priced constituents, ~46 days to resolution), here's the return on the collateral you actually deploy. I'm using that denominator on purpose: return on shorted notional looks much better and would be misleading.
 
 | scenario | what it is | ROC annualised | tail-hit prob |
 |---|---|---|---|
@@ -173,13 +175,13 @@ On the build-day flagship basket (`world-cup-winner`, 48 priced constituents, ~4
 | gamma = 1.10 | central, **literature-anchored, NOT measured here** | **~1.9%** | ~15% |
 | gamma = 1.20 | aggressive, literature-anchored | **~3.5%** | ~13% |
 
-Shorting a longshot YES is mechanically a **BUY of the NO token**, tying up ~$1/share of collateral, so the honest return is small even at the aggressive scenario, with a real fat tail (the shorted tail collectively wins ~13–17% of the time; the basket structure caps it to at most one payout per event). The distinctive FLB component (everything above the gamma=1 row) is **literature-anchored, not calibrated on this venue** — the data layer never exposes resolved markets.
+Shorting a longshot YES means buying the NO token, which ties up close to $1 of collateral per share. That's why the return stays small even in the aggressive scenario, and there's a real fat tail underneath it: the shorted names collectively resolve YES about 13–17% of the time. The basket structure helps a bit, since at most one name per event can pay out, but it doesn't make the tail go away. And everything above the gamma=1 row is the literature talking, not this venue. I couldn't calibrate it here because the data layer never hands you resolved markets.
 
-**Measured verdict: SCOPE-DOWN / kill as a capital strategy — research / dry-run only.** The edge was validated against the real settled-outcome tape (3,319 constituents, 215 resolved negRisk events, priced 24/72/168h pre-resolution from CLOB `prices-history`, run locally — [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)). It is a calibration test (returns losses when the bias is absent), and the result is **no statistically significant tail edge**: miscalibration ~±1pp and sign-unstable across horizons, every 90% bootstrap CI straddles zero (n=195–543). The hand-set γ>1 above is **not supported** (measured ≈ γ=1); the extreme tail (<0.01) is reverse-biased, **vindicating the a-priori 0.01 floor**. Only the overround (~0.3% APR on collateral) is structural, and it is maker-spread, not FLB. **Do not allocate capital.** Falsifier + loss path in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md); economic model (sim/literature prior, superseded by the measurement) in [`PROFITABILITY_ANALYSIS_FLB.md`](PROFITABILITY_ANALYSIS_FLB.md).
+Then I measured it, and the verdict is: don't put capital on this. Keep it for research and dry-run only. I checked the edge against the real settled-outcome tape: 3,319 constituents across 215 resolved negRisk events, each priced 24, 72, and 168 hours before resolution from the CLOB `prices-history` endpoint, run locally ([`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)). It's a calibration test, so it pays out only if the longshots really do resolve YES less than their price implies, and it returns losses when they don't. They didn't. There's no statistically significant edge at the tail: miscalibration is about ±1pp, the sign flips depending on the horizon, and every 90% bootstrap CI crosses zero (n=195–543). The hand-set γ>1 I'd assumed isn't there in the data; measured, it's basically γ=1. The extreme tail below 0.01 is biased the other way, which is the one thing that went right: it confirms the 0.01 floor I set before looking. The only part that holds up is the overround, ~0.3% APR on collateral, and that's just maker spread, not the bias. So: no capital. The falsifier and the loss path are in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md), and the old sim/literature model (which the measurement supersedes) is in [`PROFITABILITY_ANALYSIS_FLB.md`](PROFITABILITY_ANALYSIS_FLB.md).
 
 ### Pack 3 verification status
 
-Live-verified end-to-end in Gina's actual runtime: scanner `run_mpu8uvavqxig7b` (1 eligible basket, 10 short candidates) and executor `run_mpu8xb3jhmvuoi` (per-event exposure cap correctly throttled 10 same-event candidates to 2 dry-run shorts). A real table-discovery bug (`sqlite_master` ROWID mis-ordering) was found by live run `run_mpu8qsm5sckt6g` and fixed. Six adversarial bypass attempts written as runnable code, all blocked. Full record in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md).
+Both workflows ran end-to-end in Gina's actual runtime: the scanner (`run_mpu8uvavqxig7b`, 1 eligible basket, 10 short candidates) and the executor (`run_mpu8xb3jhmvuoi`, where the per-event exposure cap correctly cut 10 same-event candidates down to 2 dry-run shorts). One real bug showed up live: `sqlite_master` was ordering tables by ROWID and picking the wrong one (`run_mpu8qsm5sckt6g`), and I fixed it. I also wrote six bypass attempts as runnable code to try to break the risk gate; all six got blocked. The full record is in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md).
 
 ## Repo layout (matches awesome-gina)
 
@@ -250,13 +252,11 @@ Full bug ledger and live-run record in [`runs/TEST_RESULTS.md`](runs/TEST_RESULT
 
 ## Design discipline
 
-The strategy follows the same rules across all three layers:
+A few rules held across all three layers while I built this.
 
-1. **Cost-aware** — every signal layer has an explicit depth check before surfacing. The executor has explicit per-cycle P&L math and maker-vs-taker fee modelling.
-2. **Volume-tiered or volume-aware** — Layer 2 implements the dollar-weighted reframe explicitly; Layer 1 and 3 expose `minEventVolumeUsd` / per-event-capital inputs.
-3. **Kill conditions named explicitly** — each strategy MD failure-modes list is the operator's disable trigger sheet; the executor adds an auto-tripping kill-switch on daily-loss-cap breach.
-4. **Read/surface by default for layers 1+2; dryRun + stubbed live path for layer 3** — the trade-capable workflow has `place-prediction-trade` and `close-prediction-position` permissions because the code path exists, but the actual submission calls are commented in the as-shipped artifact. Going live requires explicit traceable edits.
-5. **Honest scope disclosure** — `Submission status: unverified` on the strategy MD, pointers back to the polymarket-edge methodology and `REDTEAM.md` walk-back log.
+Every signal layer checks depth before it surfaces anything, and the executor carries its own per-cycle P&L math with the maker-vs-taker fee difference modelled in. Volume is never ignored: Layer 2 is the dollar-weighted reframe itself, and Layers 1 and 3 take `minEventVolumeUsd` and per-event-capital as inputs. The kill conditions are written down: each strategy doc's failure-modes list is really the operator's "turn it off when you see this" sheet, and on top of that the executor trips its own kill-switch if the daily loss cap breaks.
+
+The first two layers only read and surface. The third can trade, and it ships with the actual submission calls commented out even though it holds `place-prediction-trade` and `close-prediction-position` permissions. The code path is there; turning it on takes deliberate, traceable edits. And the scope disclosure is blunt on purpose: the strategy docs say `Submission status: unverified` and point back to the polymarket-edge methodology and its `REDTEAM.md` walk-back log.
 
 ## Install
 
@@ -270,6 +270,8 @@ Install all three for the full pipeline, or just the scanner for research mode:
 
 ## Provenance and disclosure
 
-- **Built with significant LLM assistance.** The pack author directed the project end-to-end — venue, methodology, layered decomposition, what to validate, what to walk back — but the workflow TypeScript implementation came from working closely with Claude against `awesome-gina`'s published templates (`polymarket-market-hygiene-scan@latest.ts`, `strategy-btc-hourly-entry-stop-loss.md`, `strategy-weather-bond-rotator.md`).
-- The underlying methodology (depth-aware basket walk, count-vs-dollar reframe, walk-forward validation, maker yield projection at multiple adverse-selection scenarios) is from [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), a separate repo with full sensitivity analysis, red-team audit log, and 326 CI'd tests.
-- Submission status: `unverified` on the strategy MD. Operators reviewing for promotion to live trading should inspect the underlying polymarket-edge `REDTEAM.md` walk-back log and decide independently which findings still hold.
+I built this with a lot of LLM help, and I'd rather say so plainly. I drove the project: I picked the venue, the methodology, how to split it into layers, what to validate, and what to walk back. But most of the workflow TypeScript came from working through it with Claude against awesome-gina's own templates (`polymarket-market-hygiene-scan@latest.ts`, `strategy-btc-hourly-entry-stop-loss.md`, `strategy-weather-bond-rotator.md`).
+
+The methodology underneath it (the depth-aware basket walk, the count-vs-dollar reframe, the walk-forward validation, the maker-yield projection across adverse-selection scenarios) comes from [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), a separate repo with the full sensitivity analysis, the red-team log, and 326 CI'd tests.
+
+The strategy docs say `unverified`, and I mean it. If you're looking at this for live trading, read the polymarket-edge `REDTEAM.md` walk-back log and make your own call on which findings still stand.

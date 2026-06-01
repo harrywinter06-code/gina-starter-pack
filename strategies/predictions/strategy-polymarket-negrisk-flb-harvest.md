@@ -40,18 +40,16 @@ tags: [strategy, polymarket, negrisk, favourite-longshot-bias, flb, behavioural,
 
 # Polymarket NegRisk Favourite-Longshot Bias Harvest
 
-A behavioural-edge strategy on Polymarket negRisk events. It shorts the systematically-overpriced
-longshot tail of flagship multi-outcome baskets, harvesting the **favourite-longshot bias (FLB)** —
-described in the prediction-market literature as "the single most robust finding" in the field.
+Pack 3 shorts the overpriced longshot tail of flagship negRisk baskets, going after the favourite-longshot
+bias (FLB), which the prediction-market literature calls about the most replicated finding in the field.
 
-This is Pack 3 of the gina-starter-pack. It is **deliberately the most honest, least flattering** of
-the three: the headline is the rigorous decomposition of where the edge does and does not exist, not
-an annualised return. Read the [verdict](#honest-verdict-read-this-first) before anything else.
+It's the least flattering of the three packs, and that's deliberate. The headline isn't an APR, it's a
+careful read of where the edge is and isn't. Read the [verdict](#honest-verdict-read-this-first) first.
 
 ## Honest verdict (read this first)
 
-Built and live-verified, the FLB longshot-harvest on this venue is a **thin, capital-inefficient,
-fat-tailed edge.** Concretely, on the build-day flagship basket (`world-cup-winner`, 48 priced
+I built it, ran it live, and here's the honest summary: on this venue the longshot harvest is a thin,
+capital-hungry, fat-tailed edge. Here's the build-day flagship basket (`world-cup-winner`, 48 priced
 constituents, ~46 days to resolution):
 
 | scenario | what it is | edge / shorted-notional | **return on collateral (period)** | **annualised** | tail-hit prob |
@@ -60,65 +58,63 @@ constituents, ~46 days to resolution):
 | gamma = 1.10 | central, **literature-anchored, NOT measured here** | +13.5% | +0.24% | **~1.9%** | ~15% |
 | gamma = 1.20 | aggressive, literature-anchored | +24.4% | +0.44% | **~3.5%** | ~13% |
 
-Three things a reviewer must take from this table:
+Three things to take from that table. First, ignore the "% of shorted notional" column — it flatters
+the strategy. Shorting a longshot YES is really buying the NO token, which ties up close to full
+collateral (~$1/share), so on the denominator that matters the edge is low single digits annualised
+even in the aggressive case. Second, the only number you can actually measure on this venue is the
+gamma=1 row, ~0.3% annualised, and that's just the overround, the maker spread, which every constituent
+shares. It isn't a favourite-longshot edge at all. The real FLB part is the gamma>1 increment, and I
+can't calibrate that here because the data layer never exposes historical resolutions. Third, the tail
+is real and fat: the shorted names collectively win about 13-17% of the time, and when one does you pay
+~$1 on a name you sold for a few cents. The basket caps it (only one name per event can resolve YES) but
+doesn't remove it.
 
-1. **The flattering "% of shorted notional" column is the wrong denominator.** Shorting a longshot
-   YES is mechanically a **BUY of the NO token**, which ties up ~full collateral (~$1/share). The
-   honest denominator is collateral deployed, and on it the edge is low-single-digit annualised even
-   at the aggressive scenario.
-2. **The only number measurable on this venue is the gamma = 1 row (~0.3% annualised)** — and that is
-   just the overround (the maker spread), *not* a distinctively-FLB edge: every constituent shares it.
-   The genuinely-FLB component is the gamma > 1 increment, which depends on a behavioural-bias
-   strength we **cannot calibrate without historical resolution data the data layer does not expose.**
-3. **The tail is real and fat.** The shorted tail collectively wins ~13-17% of the time; when it does,
-   you pay ~$1 on a name you collected a few cents for. The basket structure caps this (exactly one
-   constituent resolves YES, so at most one shorted name pays out per event), but it does not remove it.
-
-**Recommendation:** deploy only as a small, diversified satellite **if you independently believe the
-literature gamma holds on Polymarket Sports AND accept the tail.** At the measurable floor it is a
-maker-spread play already covered by Pack 2. The value of this pack is the machinery and the
-decomposition, not the APR.
+So my recommendation: run it only as a small, diversified satellite, and only if you separately believe
+the literature gamma holds on Polymarket Sports and you're willing to wear the tail. At the floor you can
+actually measure, it's just a maker-spread play that Pack 2 already does. The value here is the machinery
+and the honest decomposition, not the APR.
 
 ### Verdict (measured backtest): SCOPE-DOWN / kill as a capital strategy — research / dry-run only
 
-The edge **was** validated against the real settled-outcome tape — **3,319 constituents from 215
-resolved negRisk events** (2024 election, NBA/NFL/UCL/PL champions, Fed), each priced 24h/72h/168h
-before resolution from the CLOB `prices-history` endpoint and paired with its actual outcome, run
-locally (full backtest: [`runs/backtest/MEASURED_BACKTEST_FLB.md`](../../runs/backtest/MEASURED_BACKTEST_FLB.md)).
-The measurement is a **calibration** test (realized YES-frequency vs price), not a self-validating
-"did my shorts win" replay, so it returns losses when the bias is absent — and it did.
+I checked the edge against the real settled-outcome tape: 3,319 constituents from 215 resolved negRisk
+events (2024 election, NBA/NFL/UCL/PL champions, Fed), each priced 24h/72h/168h before resolution from
+the CLOB `prices-history` endpoint and paired with how it actually resolved, run locally (full backtest:
+[`runs/backtest/MEASURED_BACKTEST_FLB.md`](../../runs/backtest/MEASURED_BACKTEST_FLB.md)). It's a
+calibration test, realized YES-frequency against price, not a "did my shorts win" replay that would
+self-validate. So it returns losses when the bias isn't there, and it did.
 
-**Result: no statistically significant favourite-longshot edge at the 0.01–0.05 tail.** Miscalibration
-(price − realized win-rate) is ~±1pp and **sign-unstable across horizons** (−0.43pp / +0.76pp / −0.67pp
-at 24/72/168h); **every 90% bootstrap CI straddles zero** (n = 195–543). The hand-set `gamma>1` that
-produced the 1.9%/3.5% ROC figures below is **not supported** — the measured equivalent is `gamma ≈ 1`
-(overround only). Two structural findings: the extreme tail (<0.01) is **reverse-biased** (resolves YES
-*more* than priced), which **measurement-vindicates the a-priori `longshotFloor = 0.01`**; and what mild
-FLB exists sits in the 0.10–0.50 band, outside this strategy's tail and equally noisy.
+The result: no statistically significant favourite-longshot edge at the 0.01–0.05 tail. Miscalibration
+(price minus realized win-rate) is about ±1pp and the sign flips with the horizon (−0.43pp / +0.76pp /
+−0.67pp at 24/72/168h), and every 90% bootstrap CI crosses zero (n = 195–543). The hand-set `gamma>1`
+behind the 1.9%/3.5% ROC figures below isn't supported; measured, it's basically `gamma ≈ 1`, the
+overround on its own. Two things did fall out of it. The extreme tail (<0.01) is biased the wrong way
+(it resolves YES *more* than priced), which is exactly why the a-priori `longshotFloor = 0.01` was the
+right call. And what mild FLB there is sits in the 0.10–0.50 band, outside this strategy's tail and just
+as noisy.
 
-**There is no measured net to justify capital.** Keep the scanner (research surface) and executor
-(dry-run reference) — the methodology is sound and the floor is measurement-vindicated — but **do not
-allocate capital.** The sim-derived `gamma>1` rows in the economics below are retained only as the
-literature prior; they are superseded by the measured `gamma ≈ 1` and must not be read as deployable.
+There's no measured net that justifies putting money on this. Keep the scanner as a research surface and
+the executor as a dry-run reference — the method is sound and the floor held up under measurement — but
+don't allocate capital. The sim-derived `gamma>1` rows in the economics below are only the literature
+prior now; the measured `gamma ≈ 1` supersedes them, so don't read them as deployable.
 
 ## The edge thesis
 
-In a negRisk event, the N mutually-exclusive constituent YES prices sum to ~1.0 (Pack 1's invariant).
-The FLB literature finds that *within* that sum, prices are **compressed toward uniform** — favourites
-are underpriced and longshots are overpriced relative to true probability. Sources converge on classic
+In a negRisk event the N mutually-exclusive YES prices sum to ~1.0 (that's Pack 1's invariant). What the
+FLB literature says is that *within* that sum the prices get squeezed toward each other: favourites come
+out underpriced and longshots overpriced relative to their true probability. The studies line up on the
 direction:
 
 - "A 70-cent contract actually corresponds to a true probability greater than 70%; the favourite is
   underpriced and the longshot is overpriced." (prediction-market calibration studies, 2024-2026)
 - "Contracts with low prices resolved less often than expected, and contracts with high prices
   resolved more often than expected."
-- The exploitable structure is **maker-side**: takers lose far more on cheap contracts than makers, so
-  the profitable side is *selling* the overpriced longshot (equivalently, buying the underpriced NO).
+- The side that pays is the maker side: takers lose far more on cheap contracts than makers do, so the
+  profitable move is *selling* the overpriced longshot (same thing as buying the underpriced NO).
 
-This is **orthogonal to Pack 1**: Pack 1 fires only when `sum_yes != 1` (a mechanical arb). FLB lives
-*inside* a basket that sums to ~1 — the mispricings cancel in the sum, so the no-arb scanner sees
-nothing. It is **distinct from Pack 2**: Pack 2 captures the bid-ask spread two-sided and neutral; this
-pack takes a directional position on a behavioural mispricing at the price extreme.
+This doesn't overlap with Pack 1. Pack 1 only fires when `sum_yes != 1`, a mechanical arb. FLB lives
+inside a basket that already sums to ~1, where the mispricings cancel out in the sum, so the no-arb
+scanner never sees it. It's a different thing from Pack 2 too: Pack 2 quotes the spread two-sided and
+stays neutral, while this takes a directional bet on a behavioural mispricing right at the price extreme.
 
 ## The model (de-vig + power-transform debiasing)
 
@@ -132,9 +128,9 @@ pack takes a directional position on a behavioural mispricing at the price extre
 3. **Edge.** Per-share sell-YES edge = `price_i - p_true_i` (positive => overpriced => short). Reported
    at three gamma scenarios, exactly mirroring Packs 1/2's three-scenario discipline.
 
-**gamma is the load-bearing assumption** — the analogue of Pack 2's adverse-selection fraction. We
-report all three scenarios independently rather than committing to one, and we gate eligibility on the
-gamma = 1 (measurable) row only.
+gamma is the assumption everything rests on, the same role adverse selection plays in Pack 2. Rather
+than pick one value, I report all three scenarios and only gate eligibility on the gamma=1 row, the one
+I can actually measure.
 
 ## Why the tail is bounded at 0.01-0.05
 
@@ -152,15 +148,16 @@ The scanner shorts only the constituent band `0.01 <= price <= 0.05`:
 | 1. FLB-eligibility scanner | [`recipe-negrisk-flb-harvest-scanner`](../../recipes/predictions/recipe-negrisk-flb-harvest-scanner.md) | [`negrisk-flb-harvest-scanner`](../../workflows/negrisk-flb-harvest-scanner/README.md) |
 | 2. FLB harvest executor | [`recipe-negrisk-flb-harvest-executor`](../../recipes/predictions/recipe-negrisk-flb-harvest-executor.md) | [`negrisk-flb-harvest-executor`](../../workflows/negrisk-flb-harvest-executor/README.md) |
 
-Layer 1 is read/surface only. Layer 2 has the same defense-in-depth as Packs 1/2's executors
-(`dryRun: true` hardcoded, submission lines commented out) plus a **diversification-first risk model**
-specific to the held-to-resolution tail.
+Layer 1 only reads and surfaces. Layer 2 has the same defenses as the Pack 1/2 executors (`dryRun: true`
+hardcoded, the submission lines commented out), plus a risk model built around diversification, because
+these positions sit on the books until the event resolves.
 
 ## Risk model (why it differs from Packs 1 and 2)
 
-FLB P&L **realises only at event resolution** (you do not know if a World Cup longshot won until July).
-Unlike Pack 2's per-fill rebate, the executor books an **expected-edge mark** on fill and carries latent
-resolution risk on the books. The primary risk control is therefore **exposure**, not realised daily P&L:
+FLB P&L only lands when the event resolves; you won't know if a World Cup longshot won until July. So
+unlike Pack 2, which earns a rebate on every fill, this executor marks an expected edge when it fills and
+then carries the resolution risk until settlement. That's why the main control here is exposure, not
+realised daily P&L:
 
 - **Per-event exposure cap** (`maxExposurePerEventUsd`, default $50): within one negRisk event the
   shorted names are mutually exclusive, so concentration there is a single correlated bet. Hard-capped.
