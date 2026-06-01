@@ -1,9 +1,8 @@
 # Pack 3 — Favourite-Longshot Bias Harvest: Profitability Analysis
 
-This document is deliberately structured to **lead with the loss leg and the honest return
-denominator**, because the natural framing of this strategy (the "% edge on shorted notional") is
-flattering and misleading. A senior reviewer should be able to find the worst-case here faster than the
-headline.
+I've put the loss leg and the honest denominator first on purpose. The natural way to frame this
+strategy, "% edge on shorted notional," flatters it and misleads, so I'd rather you find the worst case
+faster than the headline.
 
 All figures are computed on the live build-day flagship basket, `world-cup-winner` (2026-05-31 snapshot,
 48 priced constituents, sum_yes 1.019-1.024 across snapshots, ~46 days to resolution), reproduced
@@ -19,14 +18,13 @@ the NO token** at price ~ `1 - yes_price`. Per shorted name:
 - **Loss case** (longshot wins, probability `p_true_i`): NO redeems at $0.00; **loss = full deployed
   collateral** (~$1/share).
 
-The tail (band 0.01-0.05, 10 names on build day) **collectively wins ~13-17%** of the time (sum of
-`p_true` over the tail, central gamma). The negRisk basket structure caps the damage: exactly one of
-the 48 constituents resolves YES, so **at most one shorted name can pay out per event.** But within that
-~15% of events, a single name costs the full collateral on that name.
+The tail (band 0.01-0.05, 10 names on build day) collectively wins about 13-17% of the time (the sum of
+`p_true` over the tail at central gamma). The basket structure caps the damage, since exactly one of the
+48 constituents resolves YES, so at most one shorted name pays out per event. But in that ~15% of events,
+the one name that hits costs you its full collateral.
 
-This is a "sell nickels, occasionally pay a dollar" profile. It is +EV only if the tail is overpriced
-by more than the nickel — which is precisely the FLB claim, and precisely the part this venue cannot
-measure (Section 3).
+It's a sell-nickels, occasionally-pay-a-dollar profile. It's only +EV if the tail is overpriced by more
+than the nickel, which is exactly the FLB claim, and exactly the part this venue can't measure (Section 3).
 
 ## 2. The honest denominator: return on collateral
 
@@ -35,8 +33,8 @@ measure (Section 3).
 | edge / shorted notional (sum of yes_price ~ $0.18) | **+13.5%** | flattering — the shorted notional is a tiny number; it is NOT the capital at risk |
 | edge / collateral deployed (sum of no_price ~ $9.82) | **+0.24% over ~46 days** | honest — this is the capital you actually tie up |
 
-Because each short ties up ~full collateral, the honest return is **return-on-collateral**, and it is
-small. Annualising the ~46-day holding period:
+Because each short ties up close to full collateral, the honest number is return on collateral, and it's
+small. Annualising the ~46-day hold:
 
 | scenario | edge (USD, $9.82 collateral) | ROC period (~46d) | **ROC annualised** | tail-hit prob |
 |---|---|---|---|---|
@@ -44,12 +42,12 @@ small. Annualising the ~46-day holding period:
 | gamma = 1.10 (central) | $0.0239 | 0.243% | **~1.93%** | 15.3% |
 | gamma = 1.20 (aggressive) | $0.0432 | 0.440% | **~3.49%** | 13.4% |
 
-Even the aggressive literature scenario yields **~3.5% annualised on collateral**, and the central
-scenario (~1.9%) barely exceeds the opportunity cost of holding USDC, before accounting for the fat tail.
+Even the aggressive literature scenario only gets you ~3.5% annualised on collateral, and the central
+one (~1.9%) barely beats just holding USDC, before you even count the fat tail.
 
 ## 3. What is measurable here, and what is not
 
-This is the disclosure-grade core of the analysis.
+This is the part that matters most for being honest about the strategy.
 
 **Measurable on this venue:** the **overround** `kappa = sum_yes - 1` (1.9-2.4% on build day). At
 `gamma = 1`, the per-name sell edge is exactly `price_i * kappa / (1 + kappa)`, so the tail edge as a
@@ -64,36 +62,35 @@ see the probe log in TEST_RESULTS_FLB.md). We therefore anchor `gamma` to the pu
 (classic FLB direction is robust; magnitude is study- and domain-dependent) and report three scenarios
 rather than asserting one.
 
-**Consequence:** the distinctive edge of this strategy (everything above the gamma = 1 row) is
-literature-anchored, not venue-verified. We gate eligibility on the measurable floor only.
+So the distinctive edge here (everything above the gamma=1 row) is literature-anchored, not verified on
+this venue. I gate eligibility on the measurable floor only.
 
 ## 4. The contested extreme tail
 
-One strand of the literature finds *reverse* FLB at sub-1% prices (very long longshots resolving YES
-*more* often than priced — the opposite sign). To avoid betting on a contested sign, the scanner
-**excludes price < 0.01** and harvests only the 0.01-0.05 band where classic FLB is best-supported.
-This is a principled exclusion (it lowers modelled upside: central drops from 17.4% to 13.5% on shorted
-notional) made *before* looking at P&L, not a post-hoc filter.
+Part of the literature finds the opposite at sub-1% prices: reverse FLB, where the very longest longshots
+resolve YES *more* often than priced, not less. I didn't want to bet on a sign the research disagrees
+about, so the scanner skips anything below 0.01 and only harvests the 0.01-0.05 band where classic FLB is
+best supported. That exclusion costs modelled upside (central drops from 17.4% to 13.5% on shorted
+notional), and I made it before looking at any P&L, not after.
 
 ## 5. Capacity and scaling
 
-- Capacity is **flow-constrained on the maker side** (you only get filled when a biased taker lifts
-  your NO offer) and **collateral-intensive** (each short ties up ~$1/share). Both cap deployable size.
-- The strategy is best understood as a **small, diversified satellite**: many small shorts across
-  uncorrelated events. Sizing up within one event raises correlated tail risk and is hard-capped by
-  `maxExposurePerEventUsd`.
-- It does **not** scale to a primary capital allocation. At the default $300 total exposure cap and
-  central gamma, the expected annualised dollar edge is single-digit dollars — this is a methodology
-  demonstration and a satellite, not a core strategy.
+Two things cap how much you can deploy. You only get filled when a biased taker lifts your NO offer, so
+it's flow-constrained on the maker side, and each short ties up ~$1/share, so it's collateral-heavy. The
+right way to run it is as a small, diversified satellite: lots of small shorts spread across uncorrelated
+events. Sizing up inside one event piles on correlated tail risk, which is why `maxExposurePerEventUsd`
+hard-caps it. It doesn't scale to a primary allocation. At the default $300 total exposure cap and central
+gamma, the expected annual dollar edge is single-digit dollars. This is a methodology demonstration and a
+satellite, not a core strategy.
 
 ## 6. Falsifiability of this analysis
 
-If the underlying FLB claim were false on Polymarket Sports (gamma effectively = 1, or reverse at the
-tail), this strategy would earn only the overround (~0.3% annualised on collateral) minus realised
-adverse selection and the occasional full-collateral tail loss — i.e. **approximately zero to slightly
-negative.** The analysis would look almost identical at the gamma = 1 row regardless of whether FLB is
-real; that row proves nothing about FLB. **Only the gamma > 1 rows encode the FLB claim, and those are
-unverified here.** We mark them as such rather than presenting them as evidence.
+If FLB isn't real on Polymarket Sports (gamma effectively 1, or reversed at the tail), this strategy earns
+only the overround, ~0.3% annualised on collateral, minus whatever adverse selection it eats and the
+occasional full-collateral tail loss. That's roughly zero, maybe slightly negative. And the gamma=1 row
+would look the same whether or not FLB is real, so it proves nothing about FLB. Only the gamma>1 rows
+carry the actual claim, and those aren't verified here. I mark them that way instead of passing them off
+as evidence.
 
 ## 7. Banded estimate
 
@@ -103,8 +100,8 @@ unverified here.** We mark them as such rather than presenting them as evidence.
 | Central | literature gamma ~ 1.10 holds on PM Sports | **~1.9%** |
 | Aggressive | literature gamma ~ 1.20 | **~3.5%** |
 
-**Honest headline: a thin (~0-3.5% annualised on collateral), capital-inefficient, fat-tailed
-behavioural edge whose distinctive component is unverified on this venue.**
+Honest headline: a thin behavioural edge (~0-3.5% annualised on collateral), capital-inefficient, with a
+fat tail, and the part that makes it distinctive is unverified on this venue.
 
 ## 8. Verdict (MEASURED backtest): SCOPE-DOWN / kill as a capital strategy
 
