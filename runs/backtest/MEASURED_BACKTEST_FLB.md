@@ -1,33 +1,33 @@
 # Measured FLB backtest — real Polymarket resolved-negRisk outcomes
 
-Replaces Pack 3's hand-set `gamma` (FLB-strength) assumption with the **measured
-calibration** on the real settled-outcome tape: does the longshot tail actually resolve
-YES less often than its pre-resolution price implied? Run `python flb_backtest.py` (data
-pulled by `flb_fetch.py`). Inputs: `flb_dataset.json`; result: `flb_backtest_result.json`;
-console: `flb_backtest_output.txt`.
+This swaps Pack 3's hand-set `gamma` for the measured thing: on the real settled-outcome
+tape, does the longshot tail actually resolve YES less often than its price implied? Run
+`python flb_backtest.py` (the data comes from `flb_fetch.py`). Input is `flb_dataset.json`,
+the result lands in `flb_backtest_result.json`, and the console output is in
+`flb_backtest_output.txt`.
 
-**Dataset:** 3,319 constituents from **215 resolved negRisk events** (2024 election, NBA /
-Super Bowl / Champions League / Premier League champions, Fed decisions, …) — the
-strategy's actual universe. For each constituent the **YES price at 24h / 72h / 168h before
-resolution** (clean, pre-result, from CLOB `prices-history`) is paired with the **actual
-settled outcome** (gamma `outcomePrices`). Pulled locally via `curl` (the Gina sandbox has
-no network; this is why the first review could not run it — that was an access error on my
-part, not a data-availability fact).
+The dataset is 3,319 constituents from 215 resolved negRisk events (2024 election, NBA /
+Super Bowl / Champions League / Premier League champions, Fed decisions, and so on), which
+is the strategy's real universe. For each one I take the YES price at 24, 72, and 168 hours
+before resolution (clean, before the result, from CLOB `prices-history`) and pair it with how
+it actually settled (gamma `outcomePrices`). I pulled it locally with `curl`. The Gina sandbox
+has no network, which is why I couldn't run this in the first review. That was me hitting an
+access limit, not the data being unavailable.
 
 ## What it measures (and why it can return "loses money")
 
-The edge claim is `realized P(YES | entry price p) < p` for the longshot tail. The harness
-buckets real constituents by their pre-resolution price and measures realized YES-frequency,
-then replays the actual action — short the 0.01–0.05 tail (sell YES / buy NO) at the
-pre-resolution price, hold to resolution, pay $1 on any name that resolves YES.
+The edge claim is that `realized P(YES | entry price p) < p` for the longshot tail. So the
+harness buckets the real constituents by their pre-resolution price, measures how often each
+bucket actually resolved YES, then replays the real trade: short the 0.01–0.05 tail (sell YES,
+buy NO) at the pre-resolution price, hold to resolution, pay $1 whenever a shorted name wins.
 
-**Falsifier (written before running):** `tail_net = Σ(entry_price − outcome_yes)`, no floor,
-no clamp. It is **positive only if realized win-rate is below the price** (FLB real); it is
-**≤ 0 if the tail resolves YES at-or-above its priced rate**. This is a *calibration* test,
-not a "did my shorts make money" replay — the latter self-validates because longshots lose
-~95–99% of the time regardless of mispricing. A 90% bootstrap CI (resample names) that
-straddles 0 means no measurable edge. **The harness did print losses (−0.85 at 24h, −3.67 at
-168h), so it is demonstrably capable of saying "this loses money."**
+I wrote the falsifier before running anything: `tail_net = Σ(entry_price − outcome_yes)`, no
+floor, no clamp. It comes out positive only if the realized win-rate is below the price (real
+FLB), and ≤ 0 if the tail resolves YES at or above its priced rate. That's why it's a
+calibration test and not a "did my shorts make money" replay. The replay would self-validate,
+since longshots lose 95–99% of the time whether they're mispriced or not. A 90% bootstrap CI
+(resampling names) that crosses 0 means there's nothing measurable there. And the harness did
+print losses (−0.85 at 24h, −3.67 at 168h), so it can clearly say "this loses money."
 
 ## Result — calibration at the tail (price − realized, in probability points)
 
@@ -63,35 +63,38 @@ dataset.
 
 ## What the measurement actually shows
 
-1. **No measurable tail edge.** Tail miscalibration is ~±1pp and sign-unstable; all bootstrap
-   CIs include both losses and gains. The hand-set `gamma>1` (central 1.10 / aggressive 1.20)
-   that drove the docs' 1.9%/3.5% ROC is **not supported** — the measured equivalent is `gamma
-   ≈ 1` (no behavioural bias) to within noise at this band.
-2. **Reverse FLB at the extreme tail is real** — names <0.01 resolved YES *more* often than
-   priced at all three horizons. The `longshotFloor = 0.01` design choice (made a priori to
-   avoid the contested zone) is **vindicated by measurement**: without it the strategy would
-   short the one band that is biased *against* it.
-3. **Whatever mild FLB exists sits in the mid band (0.10–0.50), not the tail** — those buckets
-   lean overpriced (e.g. 168h [0.10,0.20] −7.0pp), but that is outside the strategy's band,
-   noisy, and also sign-unstable across horizons.
-4. **The only structurally-measurable component remains the overround** (~1.9% of shorted
-   notional = ~0.27% annualised on collateral at γ=1) — maker-spread capture, already Pack 2's
-   edge, in front of a ~13–17% per-event full-collateral tail.
+A few things came out of it. There's no measurable edge at the tail: the miscalibration is
+about ±1pp and the sign won't hold still, and every bootstrap CI spans both losses and gains.
+The hand-set `gamma>1` (1.10 central, 1.20 aggressive) behind the docs' 1.9%/3.5% ROC isn't
+supported. Measured, it's `gamma ≈ 1`, no behavioural bias, to within noise at this band.
+
+The reverse bias at the extreme tail is real: names below 0.01 resolved YES more often than
+priced at all three horizons. That's exactly what the `longshotFloor = 0.01` was for. I set it
+a priori to stay out of the contested zone, and the measurement backs it up — without it the
+strategy would be shorting the one band that's biased against it.
+
+What mild FLB there is sits in the mid band (0.10–0.50), not the tail. Those buckets lean
+overpriced (at 168h the [0.10,0.20] bucket resolves YES about 6.8pp below its price), but
+that's outside the strategy's band, it's noisy, and the sign flips across horizons too.
+
+The only piece you can structurally measure is the overround: about 1.9% of shorted notional,
+~0.27% annualised on collateral at γ=1. That's maker-spread capture, which is already Pack 2's
+edge, sitting in front of a ~13–17% per-event full-collateral tail.
 
 ## Honest annualisation
 
-**Declined for the tail.** The measured tail net is not statistically distinguishable from
-zero (CIs straddle 0, sign flips by horizon). Annualising a noise-indistinguishable number
-into an APR is exactly the sin this exercise exists to prevent. The only defensible annual
-figure is the structural overround floor (~0.27% on collateral), which is not an FLB edge.
+I'm not putting an APR on the tail. The measured net there isn't distinguishable from zero (the
+CIs straddle it and the sign flips by horizon), and annualising a number that's indistinguishable
+from noise is exactly the move this whole exercise exists to stop. The only annual figure I'd
+defend is the overround floor (~0.27% on collateral), and that isn't an FLB edge.
 
 ## Verdict
 
-**Scope-down / kill as a capital strategy — now on a MEASURED basis, not "unmeasurable".**
-The realized calibration on 215 resolved negRisk events shows the favourite-longshot edge at
-the 0.01–0.05 tail is **not significantly different from zero** (sign-unstable across 24/72/168h,
-all 90% bootstrap CIs straddle 0), and the extreme tail is **reverse-biased**. There is no
-measured net to justify capital. Keep the scanner as a research surface and the executor as a
-dry-run reference; the methodology (de-vig + power debias + a-priori floor) is sound and the
-floor is measurement-vindicated, but **do not allocate capital**. The measured number — a tail
-miscalibration indistinguishable from zero — is the reason.
+Scope it down, or kill it as a capital strategy — and now I can say that from measurement, not
+from "we couldn't measure it." The realized calibration across 215 resolved negRisk events puts
+the favourite-longshot edge at the 0.01–0.05 tail at not significantly different from zero (sign
+flips across 24/72/168h, every 90% bootstrap CI straddles 0), and the extreme tail is biased the
+wrong way. There's no measured net that justifies capital. Keep the scanner as a research surface
+and the executor as a dry-run reference; the method (de-vig, power debias, a-priori floor) is
+sound and the floor held up under measurement. But don't allocate capital. The reason is the
+measured number itself: a tail miscalibration you can't tell apart from zero.
