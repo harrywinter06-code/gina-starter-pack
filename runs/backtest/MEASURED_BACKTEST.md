@@ -1,33 +1,35 @@
 # Measured-fill maker-yield backtest — real Polymarket CLOB trade tape
 
-Replaces Pack 2's hand-set `captureFraction` with **measured** fill behaviour and
-**measured** adverse selection, on the real `data-api.polymarket.com/trades` tape
-for the two live-eligible World Cup constituents (France, Spain). Run with
-`python3 backtest.py` (data pulled by `fetch_tape.sh`). Result JSON:
-`backtest_result.json`; console capture: `backtest_output.txt`.
+This swaps Pack 2's hand-set `captureFraction` for measured fill behaviour and
+measured adverse selection, on the real `data-api.polymarket.com/trades` tape for
+the two live-eligible World Cup names (France, Spain). Run it with `python3
+backtest.py` (the data comes from `fetch_tape.sh`). The result JSON is
+`backtest_result.json` and the console capture is `backtest_output.txt`.
 
 ## What it measures (and why it can return "loses money")
 
-The scanner's economics rest entirely on `captureFraction` (0.05 default, 0.5 in
-the WORLD_CUP_MM headline) — a hand-set fraction of trade flow the maker is
-assumed to capture. This harness deletes that assumption and instead:
+The whole thing rests on `captureFraction` (0.05 by default, 0.5 in the
+WORLD_CUP_MM headline), which is a hand-set guess at how much of the trade flow the
+maker actually catches. This harness throws that guess out and does three things
+instead.
 
-1. Replays the **SHA-8adbd73e** maker pricing per `*/5` cycle: `buy = bestBid+5bp`,
-   `sell = bestAsk−5bp`, tick-rounded, maker-only clamps, narrow-spread retreat to
-   the touch. On the 1-tick World Cup favourite books the retreat fires, so the
-   maker **joins the touch** (bid 0.170 / ask 0.171 on France).
-2. Counts which posted quotes the **real trade tape would have crossed**
-   (= measured fills), under two fill models that bracket queue position.
-3. Marks each fill against a **de-bounced reconstructed mid** `(bid+ask)/2` at
-   5/30/120-min horizons — *not* last-trade price, which carries the bid-ask
-   bounce and manufactures fake favourable markout (the self-validating trap; an
-   earlier cut of this harness printed +40 bp/$ from exactly that bug).
+First, it replays the SHA-8adbd73e maker pricing on each `*/5` cycle: `buy =
+bestBid+5bp`, `sell = bestAsk−5bp`, tick-rounded, maker-only clamps, narrow-spread
+retreat to the touch. On the 1-tick World Cup favourite books the retreat fires, so
+the maker just joins the touch (bid 0.170 / ask 0.171 on France). Then it counts
+which of those posted quotes the real trade tape would actually have crossed (the
+measured fills), under two fill models that bracket where you sit in the queue.
+Finally it marks each fill against a de-bounced reconstructed mid `(bid+ask)/2` at
+5/30/120-min horizons, not the last-trade price. Last-trade price carries the
+bid-ask bounce and invents favourable markout out of nothing — that's the
+self-validating trap, and an earlier cut of this harness printed +40 bp/$ straight
+from that bug.
 
-**Falsifier (written before running):** net = rebate + markout, with no flooring
-and no clamp. If filled buys are followed by downward drift and filled sells by
-upward drift, markout is large-negative and net < 0. The loss path is the
-ordinary sum. **The sweep fill model below returns net-negative — the harness is
-demonstrably capable of saying "this loses money."**
+I wrote the falsifier before running it: net = rebate + markout, no floor, no clamp.
+If the buys I fill are followed by the price dropping, and the sells by the price
+rising, markout goes sharply negative and net drops below zero. The loss path is
+just the ordinary sum. And the sweep fill model below does come back net-negative,
+so the harness can say "this loses money."
 
 ## Result
 
@@ -81,20 +83,22 @@ Standing notional for the **2 live-eligible** names = ~$200 ($50/quote × 2 name
 | **0.05 (doc default)** | **$1.06** | **$387** | **194%** |
 | queue-adverse (sweep) | −$0.11 | −$40 | negative |
 
-At the doc's *own* `captureFraction=0.05` the measured net is **~$1/day / ~$387/yr**
-on the 2 live names — small-but-positive, and roughly inside the doc's stated
-"$100–3,000/year" absolute range. The APR% (194%) is a small-base artifact, as the
-doc admits. The headline "+100–200% APR" therefore survives only as that artifact;
-the meaningful figure is the **absolute few-hundred-$/year**, capacity-bound, and
-the downside tail (queue-adverse fills) is net-negative.
+At the doc's own `captureFraction=0.05`, the measured net is about $1/day, ~$387/yr,
+on the 2 live names. That's small but positive, and it sits roughly inside the doc's
+own "$100–3,000/year" range. The 194% APR is a small-base artifact, which the doc
+already admits. So the "+100–200% APR" headline only survives as that artifact; the
+number that means something is the few hundred dollars a year in absolute terms, it's
+capacity-bound, and the downside tail (when you're stuck behind the queue) is
+net-negative.
 
 ## Verdict
 
-**Scope-down.** Per filled dollar the trade is robustly positive with measured-small
-adverse selection (favourites filter vindicated), but (a) only 2 of the headline 5
-names clear live, (b) the absolute return is ~$100s–low-$1k/yr on $200–500 — below
-materiality for live capital, (c) the sign flips negative under queue-adverse fills
-the touch-joining logic cannot avoid. Ship Pack 2 only as a relabeled small-capital
-/ research yield experiment with the absolute-$ figure as the headline; do **not**
-allocate material capital on the APR%. The measured number, not a polished sim, is
-the reason.
+Scope it down. Per filled dollar the trade is solidly positive and the measured
+adverse selection is small, which is the favourites filter doing its job. But three
+things hold it back. Only 2 of the headline 5 names actually clear live. The absolute
+return is a few hundred to maybe a thousand dollars a year on $200–500, which is below
+what's worth deploying real capital for. And the sign flips negative when you're stuck
+behind the queue, which the touch-joining logic can't always avoid. So ship Pack 2 as
+a small-capital research yield experiment with the absolute-dollar figure as the
+headline, and don't put material capital behind the APR percentage. The reason is the
+measured number, not a polished sim.
