@@ -70,7 +70,7 @@ supported. Measured, it's `gamma ≈ 1`, no behavioural bias, to within noise at
 
 The reverse bias at the extreme tail is real: names below 0.01 resolved YES more often than
 priced at all three horizons. That's exactly what the `longshotFloor = 0.01` was for. I set it
-a priori to stay out of the contested zone, and the measurement backs it up — without it the
+a priori to stay out of the contested zone, and the measurement backs it up: without it the
 strategy would be shorting the one band that's biased against it.
 
 What mild FLB there is sits in the mid band (0.10–0.50), not the tail. Those buckets lean
@@ -90,7 +90,7 @@ defend is the overround floor (~0.27% on collateral), and that isn't an FLB edge
 
 ## Verdict
 
-Scope it down, or kill it as a capital strategy — and now I can say that from measurement, not
+Scope it down, or kill it as a capital strategy. And now I can say that from measurement, not
 from "we couldn't measure it." The realized calibration across 215 resolved negRisk events puts
 the favourite-longshot edge at the 0.01–0.05 tail at not significantly different from zero (sign
 flips across 24/72/168h, every 90% bootstrap CI straddles 0), and the extreme tail is biased the

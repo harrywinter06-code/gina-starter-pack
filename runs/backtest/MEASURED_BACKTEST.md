@@ -21,7 +21,7 @@ which of those posted quotes the real trade tape would actually have crossed (th
 measured fills), under two fill models that bracket where you sit in the queue.
 Finally it marks each fill against a de-bounced reconstructed mid `(bid+ask)/2` at
 5/30/120-min horizons, not the last-trade price. Last-trade price carries the
-bid-ask bounce and invents favourable markout out of nothing — that's the
+bid-ask bounce and invents favourable markout out of nothing. That's the
 self-validating trap, and an earlier cut of this harness printed +40 bp/$ straight
 from that bug.
 
