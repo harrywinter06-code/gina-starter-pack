@@ -83,3 +83,34 @@ failures on the schedule-line rule). It is true **after** the one-line-per-READM
 fix in this change: all 12 primitives now pass the live CI gate in a merged tree,
 and 4/5 workflows validate in Gina's live runtime (5th structural-only this
 session). Reproduce with `runs/validate_primitives_port.py`.
+
+## Addendum — Pack 3 (FLB Harvest), 2026-05-31
+
+Pack 3 adds 5 primitives (1 strategy + 2 recipes + 2 workflow READMEs), taking the
+pack to 17. Conformance verified to the extent possible this session:
+
+- **Ported CI gate, this repo:** `python runs/validate_primitives_port.py .` →
+  `primitive metadata validation passed for 17 entries`. Pack 3's primitives pass
+  the same metadata rules (frontmatter, semver, visibility, category prefixes,
+  cross-ref resolution).
+- **The schedule-line rule that bit Packs 1–2 does NOT bite Pack 3:** both Pack 3
+  workflow READMEs use the canonical `- Trigger: recurring schedule \`<cron>\` in
+  \`UTC\`` form from the start (scanner `14 20 * * *`, executor `*/30 * * * *`), so
+  the strategy-linked-workflow check passes with no fix.
+- **Live runtime (Gina MCP):** both Pack 3 workflows `validate` AND `run` cleanly —
+  `negrisk-flb-harvest-scanner` (3 steps, run `run_mpu8uvavqxig7b`, 1 eligible
+  basket) and `negrisk-flb-harvest-executor` (5 steps, run `run_mpu8xb3jhmvuoi`).
+  This is stronger than the Packs 1–2 live status above (which had a 5th
+  structural-only workflow).
+- **Merged-tree run, re-executed 2026-06-01:** overlaid all 17 pack primitives onto
+  a fresh `awesome-gina-ref` clone and ran the ported gate. Pristine clone → 40
+  entries pass; with the pack overlaid → **57 entries pass** (40 + 17). This is a
+  re-executed result, not an extrapolation. Reproduce: copy `recipes/`,
+  `strategies/`, `workflows/` over a clone and run `validate_primitives_port.py`.
+- **FLB backtest dataset re-fetched 2026-06-01:** the earlier dataset's event count
+  was mis-reported (`flb_fetch.py` wrote events *scanned*, not events with usable
+  rows — a fetch-loop artifact, not an analyzed-event count). Fixed the counter and
+  re-fetched on live network → **3,319 constituents from 215 distinct resolved
+  negRisk events** (was 1,429 / 107). All FLB docs updated to the regenerated
+  numbers; the measured verdict (no significant tail edge, CIs straddle zero) is
+  unchanged and reinforced by the larger sample.

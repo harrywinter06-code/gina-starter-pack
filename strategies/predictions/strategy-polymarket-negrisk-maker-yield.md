@@ -156,10 +156,11 @@ Live-verified in Gina's runtime (2026-05-31): scanner `run_mpttawax1t17ar`, exec
 | 50-day projection at informed AS, captureFraction=0.5 | ~−$3,500 (informed AS, kill-switch attenuates) |
 | Per-day net (moderate AS, captureFraction=0.05) | **~$9** |
 | Standing maker notional required | **$250–500** (5 constituents × $50 × 2 sides; recipe default) |
-| Annualised APR on $500 standing notional, Scenario A | **+657% APR** (capacity-constrained: small base, high turnover) |
-| Honest banded annualised return | **+100 to +200% APR on $250–500 standing notional** (10% Scenario A + 70% Scenario B + 20% Scenario C) |
+| **Headline (measured, real CLOB tape)** | **~$387/yr absolute on ~$200 standing** (`MEASURED_BACKTEST.md`, captureFraction=0.05) — capacity-bound, queue-position-governed; this is the figure to judge Pack 2 by |
+| Sim APR on $500 standing notional, Scenario A | +657% APR — a **small-base artifact** (= $9/day × 365 / $500), NOT scalable and superseded by the measured absolute above; retained only to show the sim/measured gap |
+| Sim banded annualised return | +100 to +200% APR on $250–500 standing notional (10% A + 70% B + 20% C) — sim-only, same small-base caveat |
 
-**Critical capacity caveat:** Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; at small standing notional ($250–500) the strategy is capacity-unconstrained on the top-5 favourites and produces high APR. At larger standing notional ($5K+), maker queue competition compresses fill rates and APR percentage shrinks even though absolute dollars grow modestly. Pack 2 is best understood as a **small-capital high-APR continuous-yield strategy** complementing Pack 1's episodic mid-cap basket-arb deployment. They operate at different capital scales and tempos and can be deployed together.
+**Critical capacity caveat:** Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; at small standing notional ($250–500) the strategy is capacity-unconstrained on the top-5 favourites and produces high APR. At larger standing notional ($5K+), maker queue competition compresses fill rates and APR percentage shrinks even though absolute dollars grow modestly. Pack 2 is best understood as a **small-capital, capacity-bound continuous-yield strategy** — the meaningful figure is the measured few-hundred-$/yr absolute, not the headline percentage — complementing Pack 1's episodic mid-cap basket-arb deployment. They operate at different capital scales and tempos and can be deployed together.
 
 Full economic model with three AS scenarios, sensitivity tables to capture-fraction assumption, per-constituent breakeven analysis, and honest banded estimate in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 

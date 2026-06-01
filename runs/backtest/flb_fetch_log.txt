@@ -1,0 +1,30 @@
+resolved negRisk events collected: 324 (cap 320)
+  event 0/320 | rows=17 | calls=17
+  event 10/320 | rows=62 | calls=251
+  event 20/320 | rows=106 | calls=424
+  event 30/320 | rows=208 | calls=692
+  event 40/320 | rows=406 | calls=1003
+  event 50/320 | rows=496 | calls=1209
+  event 60/320 | rows=548 | calls=1412
+  event 70/320 | rows=592 | calls=1623
+  event 80/320 | rows=693 | calls=1838
+  event 90/320 | rows=806 | calls=2037
+  event 100/320 | rows=880 | calls=2178
+  event 110/320 | rows=1014 | calls=2422
+  event 120/320 | rows=1212 | calls=2738
+  event 130/320 | rows=1333 | calls=3017
+  event 140/320 | rows=1478 | calls=3296
+  event 150/320 | rows=1633 | calls=3546
+  event 160/320 | rows=1799 | calls=3831
+  event 170/320 | rows=2023 | calls=4095
+  event 180/320 | rows=2170 | calls=4308
+  event 190/320 | rows=2300 | calls=4554
+  event 200/320 | rows=2451 | calls=4782
+  event 210/320 | rows=2613 | calls=4978
+  event 220/320 | rows=2769 | calls=5236
+  event 230/320 | rows=2873 | calls=5399
+  event 240/320 | rows=2994 | calls=5611
+  event 250/320 | rows=3124 | calls=5786
+  event 260/320 | rows=3264 | calls=5927
+hit history-call budget at event 262
+DONE: 3319 constituent rows from 215 distinct resolved negRisk events (320 scanned, 263 processed, 6000 history calls)

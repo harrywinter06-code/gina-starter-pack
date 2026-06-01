@@ -1,13 +1,14 @@
 # gina-starter-pack
 
-Two complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format. All 12 primitives pass `awesome-gina`'s CI metadata gate (`scripts/validate_primitives.rb`) in a merged tree, and all 5 workflows validate in Gina's live runtime — see [`runs/CONFORMANCE.md`](runs/CONFORMANCE.md) for the diff and the one fix that was required (workflow READMEs needed the canonical `/create`-compatible schedule line).
+Three complementary end-to-end Polymarket strategies for the Predictions vertical of [Ask Gina](https://askgina.ai), structured to match the [`askgina/awesome-gina`](https://github.com/askgina/awesome-gina) repo format. All 17 primitives pass `awesome-gina`'s CI metadata gate (`scripts/validate_primitives.rb`, ported to `runs/validate_primitives_port.py`) — see [`runs/CONFORMANCE.md`](runs/CONFORMANCE.md) for Packs 1–2 (merged-tree run + the one schedule-line fix that was required) and [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md) for Pack 3 (17-entry gate pass + both workflows validated and run live in Gina's runtime; Pack 3 used the canonical `/create`-compatible schedule line from the start, so no fix was needed).
 
 | pack | strategy | action | trigger | annualised banded estimate |
 |---|---|---|---|---|
 | Pack 1 | **NegRisk Basket Arbitrage** | Take the arb when basket sum_yes deviates from 1.00 | Episodic (gap-conditional) | **+15 to +40% APR** on ~$48K mid-cap |
 | Pack 2 | **NegRisk Maker Yield** | Provide liquidity on eligible constituents | Continuous (always quoted) | **sim:** +100–200% APR on $250–500 (small-base artifact). **Measured** (real CLOB tape, [`runs/backtest/`](runs/backtest/MEASURED_BACKTEST.md)): small-positive ~$100s–$1k/yr, capacity-bound, queue-adverse tail negative → **scope-down** |
+| Pack 3 | **NegRisk Favourite-Longshot Bias Harvest** | Short the overpriced longshot tail (BUY NO) when sum_yes ≈ 1 but the internal allocation is biased | Daily (held to resolution) | **VERDICT: scope-down / kill — research / dry-run only, do NOT allocate capital.** Measured on real tape (215 resolved negRisk events, [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)): **no significant tail edge** — miscalibration sign-flips by horizon, all bootstrap CIs straddle 0; extreme tail is reverse-biased (vindicates the 0.01 floor). Only structural component is the overround (~0.3% APR) — maker-spread, not FLB |
 
-Both packs are sourced from the same polymarket-edge research repo. They operate at different capital scales: Pack 1 deploys $10K–$48K of episodic basket-arb capital; Pack 2 collects rebate on $250–$1000 of standing maker notional. **Pack 2's APR is NOT linearly scalable — it captures flow that crosses our inside-spread quotes; capacity bottlenecks dominate at larger notional.** Combined deployment yields ~$2K–$21K/year with Pack 1 carrying the majority and Pack 2 adding continuous baseline.
+The three packs fire on **orthogonal mispricings** across the negRisk-event lifecycle: Pack 1 when sum_yes ≠ 1 (mechanical arb, $10K–$48K episodic), Pack 2 on the bid-ask spread continuously ($250–$1000 standing maker notional), Pack 3 *inside* a basket that sums to ~1 but is internally biased (small diversified satellite). **Pack 3 is by design the most rigorous and least flattering** — measured against the real settled-outcome tape (215 resolved negRisk events) its distinctive favourite-longshot edge at the 0.01–0.05 tail is **not statistically different from zero** (sign-unstable across horizons, all bootstrap CIs straddle 0); only the overround floor is structural, and the extreme tail is reverse-biased (vindicating the 0.01 floor). It demonstrates the discipline of measuring a claimed edge to zero and refusing to dress it up. None of the three APRs is linearly scalable.
 
 ## Pack 1 — Polymarket NegRisk Basket Arbitrage
 
@@ -126,15 +127,59 @@ Pack 2's eligibility filter selects the structurally-positive subset BEFORE capi
 | 50-day moderate-AS at Pack 2 default captureFraction=0.05 | n/a | **+$450** |
 | 50-day informed-AS projection | −$12,120 | ~−$3,500 (kill-switch attenuates) |
 | Markets net-positive at moderate AS | 7/48 | 5/5 by construction |
-| Honest banded annualised return on $500 standing notional | knife-edge ~+1% APR | **+100 to +200% APR (small-base, capacity-constrained)** |
+| Headline (measured, real CLOB tape) | — | **~$387/yr absolute on ~$200 standing**, capacity-bound (sim APR % is a small-base artifact, superseded) |
 
-**Pack 2 operates at a different capital scale than Pack 1.** Pack 2 is structurally a small-capital high-APR continuous-yield strategy ($250–500 standing notional, capacity-constrained on flow). Pack 1 is a mid-cap episodic basket-arb strategy ($10K–$48K). They are NOT directly comparable per-dollar — they target different parts of the negRisk-event lifecycle. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter from `polymarket_mm_sim.py.breakeven_half_spread_fraction`) AND a complementary capital-scale tier. Pack 2 ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure as Pack 1.
+**Pack 2 operates at a different capital scale than Pack 1.** Pack 2 is structurally a small-capital, capacity-bound continuous-yield strategy ($250–500 standing notional) whose meaningful figure is the measured few-hundred-$/yr absolute, not the headline percentage. Pack 1 is a mid-cap episodic basket-arb strategy ($10K–$48K). They are NOT directly comparable per-dollar — they target different parts of the negRisk-event lifecycle. Pack 2's value is the methodological refinement (depth-walk spread + principled eligibility filter from `polymarket_mm_sim.py.breakeven_half_spread_fraction`) AND a complementary capital-scale tier. Pack 2 ships with the same defense-in-depth discipline, the same seven-pass adversarial-test discipline, and the same honest scope disclosure as Pack 1.
 
 Full economic model and per-constituent breakeven analysis in [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](PROFITABILITY_ANALYSIS_MAKER_YIELD.md).
 
 ### Pack 2 verification status (honest disclosure)
 
 Pack 2's first six passes are completed at the structural / methodological / adversarial layers (parse-equivalent to Pack 1's verified code; analytic equivalence to `polymarket_mm_sim.py` shown explicitly; 1 bug found and fixed in the pre-send adversarial sweep). Passes 4-5-6 (live Gina runtime verification) are **PENDING operator verification** — the transient JWT used to verify Pack 1's runs expired between Pack 1's ship and Pack 2's build. The operator should run `workflow validate` + `workflow run negrisk-maker-yield-scanner` on first install to complete those passes; full per-pass status in [`runs/TEST_RESULTS_MAKER_YIELD.md`](runs/TEST_RESULTS_MAKER_YIELD.md).
+
+## Pack 3 — Polymarket NegRisk Favourite-Longshot Bias Harvest
+
+**Polymarket NegRisk Favourite-Longshot Bias Harvest** — harvests the favourite-longshot bias (FLB), described in the prediction-market literature as "the single most robust finding" in the field: within a negRisk basket whose YES prices sum to ~1.0, prices are compressed toward uniform, so the longshot tail is systematically overpriced and the favourite underpriced. Pack 3 shorts the overpriced longshot tail. It fires precisely where Packs 1 and 2 are silent — when `sum_yes ≈ 1` (no mechanical arb) but the internal allocation is biased.
+
+Two install units:
+
+```
+[ Polymarket negRisk events, sum_yes ≈ 1.0 ]
+              ↓
+   Layer 1 — FLB-eligibility scanner (recipe-negrisk-flb-harvest-scanner)
+   • Daily 20:14 UTC. Self-bootstrapping (parses the registered table from bootstrap output).
+   • Filters to flagship negRisk events (sum_yes ≈ 1, lifetime volume ≥ $1M).
+   • De-vig: q_i = price_i / sum_yes. Debias: p_true_i = q_i^gamma / Σ q^gamma (gamma 1.0/1.10/1.20).
+   • Scores the longshot tail (0.01 ≤ price ≤ 0.05): sell edge, edge%-of-notional AND %-of-collateral.
+   • Eligibility gates on the MEASURABLE (gamma=1, overround-only) edge; FLB upside is reported, not gated.
+   • Output: flb:eligible_baskets KV (per-name short list incl. NO token) (consumed by Layer 2).
+              ↓
+   Layer 2 — FLB harvest executor (recipe-negrisk-flb-harvest-executor)
+   • Every 30 min (positions are held to resolution, not requoted intraday).
+   • Shorts each longshot via a maker BUY of the NO token (the only collateralised short on the CLOB).
+   • Diversification-first risk gate: per-event exposure cap (within-event names are mutually exclusive),
+     total exposure cap, max open positions, daily notional, daily-loss kill-switch.
+   • Books EXPECTED edge on fill (mark-to-model, central gamma); realised P&L only at event resolution.
+   • Defaults to dryRun: true; live path requires explicit operator edits.
+```
+
+### Pack 3 honest verdict (read before the economics)
+
+On the build-day flagship basket (`world-cup-winner`, 48 priced constituents, ~46 days to resolution), the honest **return on collateral deployed** (not the flattering return-on-shorted-notional) is:
+
+| scenario | what it is | ROC annualised | tail-hit prob |
+|---|---|---|---|
+| gamma = 1.0 | overround only — **the only venue-measurable number** (≈ maker spread, not distinctively FLB) | **~0.3%** | ~17% |
+| gamma = 1.10 | central, **literature-anchored, NOT measured here** | **~1.9%** | ~15% |
+| gamma = 1.20 | aggressive, literature-anchored | **~3.5%** | ~13% |
+
+Shorting a longshot YES is mechanically a **BUY of the NO token**, tying up ~$1/share of collateral, so the honest return is small even at the aggressive scenario, with a real fat tail (the shorted tail collectively wins ~13–17% of the time; the basket structure caps it to at most one payout per event). The distinctive FLB component (everything above the gamma=1 row) is **literature-anchored, not calibrated on this venue** — the data layer never exposes resolved markets.
+
+**Measured verdict: SCOPE-DOWN / kill as a capital strategy — research / dry-run only.** The edge was validated against the real settled-outcome tape (3,319 constituents, 215 resolved negRisk events, priced 24/72/168h pre-resolution from CLOB `prices-history`, run locally — [`runs/backtest/MEASURED_BACKTEST_FLB.md`](runs/backtest/MEASURED_BACKTEST_FLB.md)). It is a calibration test (returns losses when the bias is absent), and the result is **no statistically significant tail edge**: miscalibration ~±1pp and sign-unstable across horizons, every 90% bootstrap CI straddles zero (n=195–543). The hand-set γ>1 above is **not supported** (measured ≈ γ=1); the extreme tail (<0.01) is reverse-biased, **vindicating the a-priori 0.01 floor**. Only the overround (~0.3% APR on collateral) is structural, and it is maker-spread, not FLB. **Do not allocate capital.** Falsifier + loss path in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md); economic model (sim/literature prior, superseded by the measurement) in [`PROFITABILITY_ANALYSIS_FLB.md`](PROFITABILITY_ANALYSIS_FLB.md).
+
+### Pack 3 verification status
+
+Live-verified end-to-end in Gina's actual runtime: scanner `run_mpu8uvavqxig7b` (1 eligible basket, 10 short candidates) and executor `run_mpu8xb3jhmvuoi` (per-event exposure cap correctly throttled 10 same-event candidates to 2 dry-run shorts). A real table-discovery bug (`sqlite_master` ROWID mis-ordering) was found by live run `run_mpu8qsm5sckt6g` and fixed. Six adversarial bypass attempts written as runnable code, all blocked. Full record in [`runs/TEST_RESULTS_FLB.md`](runs/TEST_RESULTS_FLB.md).
 
 ## Repo layout (matches awesome-gina)
 
@@ -143,10 +188,12 @@ gina-starter-pack/
 ├── README.md
 ├── PROFITABILITY_ANALYSIS.md                                     ← Pack 1 economic model
 ├── PROFITABILITY_ANALYSIS_MAKER_YIELD.md                         ← Pack 2 economic model
+├── PROFITABILITY_ANALYSIS_FLB.md                                 ← Pack 3 economic model
 ├── strategies/
 │   └── predictions/
 │       ├── strategy-polymarket-negrisk-basket-arbitrage.md       ← Pack 1 (3 layers)
-│       └── strategy-polymarket-negrisk-maker-yield.md            ← Pack 2 (2 layers)
+│       ├── strategy-polymarket-negrisk-maker-yield.md            ← Pack 2 (2 layers)
+│       └── strategy-polymarket-negrisk-flb-harvest.md            ← Pack 3 (2 layers)
 ├── workflows/
 │   ├── negrisk-event-arbitrage-surfacer/        (Pack 1 layer 1 — scanner)
 │   │   ├── README.md
@@ -160,20 +207,31 @@ gina-starter-pack/
 │   ├── negrisk-maker-yield-scanner/              (Pack 2 layer 1 — eligibility scanner)
 │   │   ├── README.md
 │   │   └── references/negrisk-maker-yield-scanner@latest.ts
-│   └── negrisk-maker-yield-executor/             (Pack 2 layer 2 — maker-yield executor)
+│   ├── negrisk-maker-yield-executor/             (Pack 2 layer 2 — maker-yield executor)
+│   │   ├── README.md
+│   │   └── references/negrisk-maker-yield-executor@latest.ts
+│   ├── negrisk-flb-harvest-scanner/              (Pack 3 layer 1 — FLB-eligibility scanner)
+│   │   ├── README.md
+│   │   └── references/negrisk-flb-harvest-scanner@latest.ts
+│   └── negrisk-flb-harvest-executor/             (Pack 3 layer 2 — FLB harvest executor)
 │       ├── README.md
-│       └── references/negrisk-maker-yield-executor@latest.ts
+│       └── references/negrisk-flb-harvest-executor@latest.ts
 ├── recipes/
 │   └── predictions/
 │       ├── recipe-negrisk-event-arbitrage-surfacer.md            ← Pack 1
 │       ├── recipe-volume-tier-trap-filter.md                     ← Pack 1
 │       ├── recipe-negrisk-maker-executor.md                      ← Pack 1
 │       ├── recipe-negrisk-maker-yield-scanner.md                 ← Pack 2
-│       └── recipe-negrisk-maker-yield-executor.md                ← Pack 2
+│       ├── recipe-negrisk-maker-yield-executor.md                ← Pack 2
+│       ├── recipe-negrisk-flb-harvest-scanner.md                 ← Pack 3
+│       └── recipe-negrisk-flb-harvest-executor.md                ← Pack 3
 └── runs/
     ├── dryrun-negrisk-2026-05-30.log
+    ├── CONFORMANCE.md                                            ← awesome-gina CI gate conformance
+    ├── validate_primitives_port.py                               ← ported CI metadata gate
     ├── TEST_RESULTS.md                                            ← Pack 1 ledger
-    └── TEST_RESULTS_MAKER_YIELD.md                                ← Pack 2 ledger
+    ├── TEST_RESULTS_MAKER_YIELD.md                                ← Pack 2 ledger
+    └── TEST_RESULTS_FLB.md                                        ← Pack 3 ledger
 ```
 
 ## Seven test passes documented
