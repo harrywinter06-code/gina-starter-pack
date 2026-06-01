@@ -149,12 +149,12 @@ Then return:
 
 - Source recipe: this file.
 - Workflow source: `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`.
-- Build-day economic model: [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md) and [`strategy-polymarket-negrisk-maker-yield.md#expected-economics`](../../strategies/predictions/strategy-polymarket-negrisk-maker-yield.md#expected-economics).
+- Build-day economic model: [`PROFITABILITY_ANALYSIS_MAKER_YIELD.md`](../../PROFITABILITY_ANALYSIS_MAKER_YIELD.md) and [`strategy-polymarket-negrisk-maker-yield.md#expected-economics`](../../strategies/trading/strategy-polymarket-negrisk-maker-yield.md#expected-economics).
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `WORLD_CUP_MM.md` + `polymarket_mm_sim.py`.
 
 ## Backlinks
 
 - [Workflow](../../workflows/negrisk-maker-yield-executor/README.md)
-- [Strategy](../../strategies/predictions/strategy-polymarket-negrisk-maker-yield.md)
+- [Strategy](../../strategies/trading/strategy-polymarket-negrisk-maker-yield.md)
 - [Pack README](../../README.md)
 - Category: `recipes/predictions/` (resolves to `docs/categories/recipes.md` when merged into `awesome-gina`)

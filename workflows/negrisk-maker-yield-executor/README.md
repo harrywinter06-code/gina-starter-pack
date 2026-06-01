@@ -4,7 +4,7 @@ slug: negrisk-maker-yield-executor
 name: NegRisk Maker Yield Executor Workflow
 type: workflow
 summary: Consume the eligibility list from the maker-yield scanner KV, plan per-constituent two-sided maker limit-order intents at bestBid + 5bp (buy) / bestAsk - 5bp (sell), tick-rounded and maker-only, under risk caps, optionally submit them, and settle estimated rebate-net-of-AS P&L per cycle.
-category: workflows/predictions
+category: workflows/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -141,7 +141,7 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/negrisk-maker-yield-executor/references/negrisk-maker-yield-executor@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy, Layer 2).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy, Layer 2).
 - Companion recipe: `recipes/predictions/recipe-negrisk-maker-yield-executor.md`.
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `WORLD_CUP_MM.md` + `polymarket_mm_sim.py` (analytic core).
 - Pack-level profitability analysis: `PROFITABILITY_ANALYSIS_MAKER_YIELD.md`.
@@ -149,4 +149,4 @@ flowchart TD
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/trading/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

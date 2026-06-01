@@ -4,7 +4,7 @@ slug: negrisk-flb-harvest-executor
 name: NegRisk FLB Harvest Executor Workflow
 type: workflow
 summary: Consume the FLB short list and short the overpriced longshot tail via maker BUY-NO limit intents under diversification-first exposure caps; book expected edge on fill (mark-to-model, realised only at event resolution) and trip the kill-switch on exposure breach. Defaults to dryRun.
-category: workflows/predictions
+category: workflows/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -115,10 +115,10 @@ flowchart TD
 
 - Source artifact: `workflows/negrisk-flb-harvest-executor/references/negrisk-flb-harvest-executor@latest.ts`.
 - Live run: `run_mpu8xb3jhmvuoi` (consumed 10 candidates; per-event cap correctly throttled to 2 dry-run shorts; expected edge $0.19 on $50). Full record in [`runs/TEST_RESULTS_FLB.md`](../../runs/TEST_RESULTS_FLB.md).
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md` (Layer 2).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-flb-harvest.md` (Layer 2).
 - Companion recipe: `recipes/predictions/recipe-negrisk-flb-harvest-executor.md`.
 
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/trading/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

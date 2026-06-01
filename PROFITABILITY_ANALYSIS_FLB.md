@@ -129,7 +129,7 @@ that meets Pack 2's standard, a measured tail edge you can't tell apart from zer
 
 ## Backlinks
 
-- [Strategy](strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md)
+- [Strategy](strategies/trading/strategy-polymarket-negrisk-flb-harvest.md)
 - [Scanner recipe](recipes/predictions/recipe-negrisk-flb-harvest-scanner.md) / [Executor recipe](recipes/predictions/recipe-negrisk-flb-harvest-executor.md)
 - [Test results + numeric validation](runs/TEST_RESULTS_FLB.md)
 - [Pack README](README.md)

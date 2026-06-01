@@ -150,12 +150,12 @@ Then return:
 
 - Source recipe: this file.
 - Workflow source: `workflows/negrisk-maker-executor/references/negrisk-maker-executor@latest.ts`.
-- Build-day economic model: [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md) and [`strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics`](../../strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics), depth-walked executable economics on the World Cup event (build day: $1.30B event volume, Spain YES zero slippage through $5K basket size, +60 bp net at $500/mkt basket, maker-only viable at this gap level).
+- Build-day economic model: [`PROFITABILITY_ANALYSIS.md`](../../PROFITABILITY_ANALYSIS.md) and [`strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics`](../../strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics), depth-walked executable economics on the World Cup event (build day: $1.30B event volume, Spain YES zero slippage through $5K basket size, +60 bp net at $500/mkt basket, maker-only viable at this gap level).
 - Pack-level profitability analysis: `PROFITABILITY_ANALYSIS.md`.
 
 ## Backlinks
 
 - [Workflow](../../workflows/negrisk-maker-executor/README.md)
-- [Strategy](../../strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md)
+- [Strategy](../../strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md)
 - [Pack README](../../README.md)
 - Category: `recipes/predictions/` (resolves to `docs/categories/recipes.md` when merged into `awesome-gina`)

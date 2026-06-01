@@ -4,7 +4,7 @@ slug: polymarket-negrisk-flb-harvest
 name: Polymarket NegRisk Favourite-Longshot Bias Harvest
 type: strategy
 summary: Harvests the favourite-longshot bias (the single most-replicated prediction-market anomaly) by shorting the overpriced longshot tail of flagship negRisk baskets. Fires when sum_yes ~ 1.0 (so Pack 1 sees no mechanical arb) but the internal price allocation is biased. Honest by construction - the only venue-measurable component of the edge is the overround; the distinctive FLB premium is literature-anchored and reported with explicit sensitivity bands, and return-on-collateral is reported (not the flattering return-on-shorted-notional).
-category: strategies/predictions
+category: strategies/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -33,7 +33,7 @@ relationships:
     - negrisk-flb-harvest-scanner
     - negrisk-flb-harvest-executor
 evidence:
-  setup: strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md#setup
+  setup: strategies/trading/strategy-polymarket-negrisk-flb-harvest.md#setup
   example: runs/TEST_RESULTS_FLB.md
 tags: [strategy, polymarket, negrisk, favourite-longshot-bias, flb, behavioural, tail-short, predictions]
 ---
@@ -270,4 +270,4 @@ negRisk lifecycle.
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `strategies/predictions/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)
+- Category: `strategies/trading/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)

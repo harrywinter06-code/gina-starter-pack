@@ -4,7 +4,7 @@ slug: negrisk-event-arbitrage-surfacer
 name: NegRisk Event Arbitrage Surfacer Workflow
 type: workflow
 summary: Scan active Polymarket negRisk events for sum-of-yes deviations from $1.00 and depth-walk constituent orderbooks to surface only basket arbitrages that clear at meaningful size.
-category: workflows/predictions
+category: workflows/market-data
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -120,7 +120,7 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/negrisk-event-arbitrage-surfacer/references/negrisk-event-arbitrage-surfacer@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 1).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 1).
 - Companion recipe: `recipes/predictions/recipe-negrisk-event-arbitrage-surfacer.md`.
 - Build-day dry-run: `runs/dryrun-negrisk-2026-05-30.log`, captured live against the Gina MCP. World Cup event (60 constituents, sum_yes = 1.027 = +270 bp gross deviation, ev_vol $1.30B); representative constituent depth-walk (Spain YES, zero slippage through $5,000 basket size, $14.76M of ask depth).
 - Adversarial test results: `runs/TEST_RESULTS.md`, documents two-pass red-team including SQL-injection-via-event-slug elimination, response-shape-handling fix, and walk-completeness conservative classification.
@@ -129,4 +129,4 @@ flowchart TD
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/market-data/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

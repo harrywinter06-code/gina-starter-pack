@@ -129,6 +129,6 @@ Then return:
 ## Backlinks
 
 - [Workflow](../../workflows/negrisk-maker-yield-scanner/README.md)
-- [Strategy](../../strategies/predictions/strategy-polymarket-negrisk-maker-yield.md)
+- [Strategy](../../strategies/trading/strategy-polymarket-negrisk-maker-yield.md)
 - [Pack README](../../README.md)
 - Category: `recipes/predictions/` (resolves to `docs/categories/recipes.md` when merged into `awesome-gina`)

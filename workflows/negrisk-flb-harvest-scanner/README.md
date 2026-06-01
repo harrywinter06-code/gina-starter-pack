@@ -4,7 +4,7 @@ slug: negrisk-flb-harvest-scanner
 name: NegRisk FLB Harvest Scanner Workflow
 type: workflow
 summary: Scan flagship Polymarket negRisk baskets that sum to ~1.0, de-vig to implied probabilities, debias under a horse-racing power model at three FLB-strength scenarios, and surface the overpriced longshot tail (0.01-0.05) whose conservative (overround-only) edge clears a fee floor.
-category: workflows/predictions
+category: workflows/market-data
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -110,10 +110,10 @@ flowchart TD
 
 - Source artifact: `workflows/negrisk-flb-harvest-scanner/references/negrisk-flb-harvest-scanner@latest.ts`.
 - Live runs: `run_mpu8qsm5sckt6g` (found the table-discovery bug), `run_mpu8uvavqxig7b` (post-fix, 1 eligible basket + 10 short candidates). Full record in [`runs/TEST_RESULTS_FLB.md`](../../runs/TEST_RESULTS_FLB.md).
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md` (Layer 1).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-flb-harvest.md` (Layer 1).
 - Companion recipe: `recipes/predictions/recipe-negrisk-flb-harvest-scanner.md`.
 
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/market-data/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

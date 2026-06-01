@@ -4,7 +4,7 @@ slug: negrisk-maker-executor
 name: NegRisk Maker Arbitrage Executor Workflow
 type: workflow
 summary: Consume depth-verified negRisk arbitrage signals from KV, plan maker order intents under risk caps, optionally submit, and manage positions through basket convergence with realised P&L tracking.
-category: workflows/predictions
+category: workflows/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -148,12 +148,12 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/negrisk-maker-executor/references/negrisk-maker-executor@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 3).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 3).
 - Companion recipe: `recipes/predictions/recipe-negrisk-maker-executor.md`.
-- Build-day live economic model: `PROFITABILITY_ANALYSIS.md` and `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics`, derived from the World Cup observation in `runs/dryrun-negrisk-2026-05-30.log` (sum_yes 1.027, ev_vol $1.30B, Spain YES zero slippage through $5K basket) plus polymarket-edge `WORLD_CUP_MM.md` moderate-AS scenario.
+- Build-day live economic model: `PROFITABILITY_ANALYSIS.md` and `strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md#expected-economics`, derived from the World Cup observation in `runs/dryrun-negrisk-2026-05-30.log` (sum_yes 1.027, ev_vol $1.30B, Spain YES zero slippage through $5K basket) plus polymarket-edge `WORLD_CUP_MM.md` moderate-AS scenario.
 - Pack-level profitability analysis: `PROFITABILITY_ANALYSIS.md`.
 
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/trading/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

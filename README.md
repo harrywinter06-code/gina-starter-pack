@@ -65,7 +65,7 @@ Real signals: 1
 
 ## Why this pack
 
-awesome-gina already has 5 strategies under `strategies/trading/` and 4 Polymarket workflows (Hygiene Scan, Signal Scanner, NBA Matchup Edge, Weather Bond Rotator). What it doesn't have is a `strategies/predictions/` directory at all, and nothing that works at the event level. The existing Polymarket workflows check one market at a time or rank single markets; none of them looks across the constituents of a negRisk event the way the no-arb math needs. That's the gap I went after, in three pieces:
+awesome-gina already has 5 strategies under `strategies/trading/` and 4 Polymarket workflows (Hygiene Scan, Signal Scanner, NBA Matchup Edge, Weather Bond Rotator). What it doesn't have is anything that works at the event level. The existing Polymarket workflows check one market at a time or rank single markets; none of them looks across the constituents of a negRisk event the way the no-arb math needs. That's the gap I went after, in three pieces:
 
 | layer | gap filled |
 |---|---|
@@ -192,7 +192,7 @@ gina-starter-pack/
 ├── PROFITABILITY_ANALYSIS_MAKER_YIELD.md                         ← Pack 2 economic model
 ├── PROFITABILITY_ANALYSIS_FLB.md                                 ← Pack 3 economic model
 ├── strategies/
-│   └── predictions/
+│   └── trading/
 │       ├── strategy-polymarket-negrisk-basket-arbitrage.md       ← Pack 1 (3 layers)
 │       ├── strategy-polymarket-negrisk-maker-yield.md            ← Pack 2 (2 layers)
 │       └── strategy-polymarket-negrisk-flb-harvest.md            ← Pack 3 (2 layers)
@@ -262,7 +262,7 @@ The first two layers only read and surface. The third can trade, and it ships wi
 
 Install all three for the full pipeline, or just the scanner for research mode:
 
-1. Copy `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` into `awesome-gina/strategies/predictions/` (create the directory if it doesn't exist).
+1. Copy `strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md` into `awesome-gina/strategies/trading/`, alongside the existing NBA and Weather strategies.
 2. Copy the three workflow directories (`negrisk-event-arbitrage-surfacer/`, `volume-tier-trap-filter/`, `negrisk-maker-executor/`) into `awesome-gina/workflows/`.
 3. Copy `recipes/predictions/` contents into `awesome-gina/recipes/predictions/`.
 4. In Gina, install the three recipes in order (scanner at 14:00 UTC, filter at 14:05 UTC, executor at `*/5 * * * *` UTC).

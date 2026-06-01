@@ -161,6 +161,6 @@ the docs' 1.9%/3.5% ROC is not supported; the measured equivalent is `gamma ≈ 
 
 ## Backlinks
 
-- [Strategy](../strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md)
+- [Strategy](../strategies/trading/strategy-polymarket-negrisk-flb-harvest.md)
 - [Profitability analysis](../PROFITABILITY_ANALYSIS_FLB.md)
 - [Pack README](../README.md)

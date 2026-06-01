@@ -22,7 +22,7 @@ live runtime via the `gina-predictions` MCP.
 | Frontmatter required fields (id/slug/name/type/summary/category/license/version/visibility/status/tags) | ✅ all 12 primitives present |
 | `repo`-or-`homepage`, `verification.tier`, `security.permissions` | ✅ present on all |
 | Permission vocabulary (`read-orderbook`, `write-agentfs-state`) | ✅ legit, live `strategy-weather-bond-rotator` uses both; not invented |
-| `category` prefix (`strategies/` `recipes/` `workflows/`) | ✅ correct; `strategies/predictions` is allowed (prefix-only check) |
+| `category` prefix (`strategies/` `recipes/` `workflows/`) | ✅ correct; `strategies/trading` is allowed (prefix-only check) |
 | Strategy `relationships.recipeIds` non-empty + all cross-refs resolve | ✅ |
 | Workflow artifact filenames not starting `workflow-` | ✅ |
 | Body sections (Trigger/Inputs/Outputs/Side effects/Failure modes) | ✅ all present |

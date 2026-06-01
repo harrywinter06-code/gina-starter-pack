@@ -162,6 +162,6 @@ Then return:
 ## Backlinks
 
 - [Workflow](../../workflows/negrisk-flb-harvest-executor/README.md)
-- [Strategy](../../strategies/predictions/strategy-polymarket-negrisk-flb-harvest.md)
+- [Strategy](../../strategies/trading/strategy-polymarket-negrisk-flb-harvest.md)
 - [Pack README](../../README.md)
 - Category: `recipes/predictions/` (resolves to `docs/categories/recipes.md` when merged into `awesome-gina`)

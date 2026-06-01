@@ -4,7 +4,7 @@ slug: polymarket-negrisk-maker-yield
 name: Polymarket NegRisk Maker Yield
 type: strategy
 summary: Maker-rebate yield strategy on Polymarket negRisk constituent markets, with depth-walk-derived spread estimation (replacing polymarket-edge's realised-drift proxy) and a principled mean-price eligibility filter that excludes the long tail of net-negative-under-moderate-AS constituents.
-category: strategies/predictions
+category: strategies/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -33,7 +33,7 @@ relationships:
     - negrisk-maker-yield-scanner
     - negrisk-maker-yield-executor
 evidence:
-  setup: strategies/predictions/strategy-polymarket-negrisk-maker-yield.md#setup
+  setup: strategies/trading/strategy-polymarket-negrisk-maker-yield.md#setup
   example: runs/TEST_RESULTS_MAKER_YIELD.md
 tags: [strategy, polymarket, negrisk, maker, yield, rebate, adverse-selection, depth-aware, dollar-weighted]
 ---
@@ -215,4 +215,4 @@ The strategy installs as two independent recipes. Install both for the full pipe
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `strategies/predictions/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)
+- Category: `strategies/trading/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)

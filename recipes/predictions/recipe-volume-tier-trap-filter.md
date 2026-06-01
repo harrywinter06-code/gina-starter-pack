@@ -138,6 +138,6 @@ Then return:
 ## Backlinks
 
 - [Workflow](../../workflows/volume-tier-trap-filter/README.md)
-- [Strategy](../../strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md)
+- [Strategy](../../strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md)
 - [Pack README](../../README.md)
 - Category: `recipes/predictions/` (resolves to `docs/categories/recipes.md` when merged into `awesome-gina`)

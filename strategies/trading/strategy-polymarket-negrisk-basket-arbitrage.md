@@ -4,7 +4,7 @@ slug: polymarket-negrisk-basket-arbitrage
 name: Polymarket NegRisk Basket Arbitrage
 type: strategy
 summary: End-to-end Polymarket negRisk-event basket-arbitrage strategy that scans for sum-of-yes deviations from $1.00, filters by dollar-volume tier, depth-walks each candidate at $50/$500/$5,000 per constituent, and surfaces or executes only basket trades that clear at meaningful size after fees.
-category: strategies/predictions
+category: strategies/trading
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -35,7 +35,7 @@ relationships:
     - volume-tier-trap-filter
     - negrisk-maker-executor
 evidence:
-  setup: strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md#setup
+  setup: strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md#setup
   example: runs/dryrun-negrisk-2026-05-30.log
 tags: [strategy, polymarket, negrisk, arbitrage, depth-aware, dollar-weighted, maker, executor]
 ---
@@ -199,4 +199,4 @@ Real signals: 1
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `strategies/predictions/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)
+- Category: `strategies/trading/` (resolves to `docs/categories/strategies.md` when merged into `awesome-gina`)

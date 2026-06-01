@@ -266,5 +266,5 @@ Weighted = 0.1 × 328 + 0.7 × 109 + 0.2 × (−35)
 - polymarket-edge `src/polymarket_edge/polymarket_mm_sim.py`, `estimate_half_spread`, `simulate_market_maker`, `breakeven_half_spread_fraction` (the analytic core ported to JS in this pack).
 - polymarket-edge `REDTEAM.md` §8a, the maker-yield walk-back disclosure.
 - `runs/TEST_RESULTS_MAKER_YIELD.md`, adversarial test pass on the Pack 2 workflow TS files.
-- `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md`, strategy MD with bundle map and capability contract.
+- `strategies/trading/strategy-polymarket-negrisk-maker-yield.md`, strategy MD with bundle map and capability contract.
 - `PROFITABILITY_ANALYSIS.md`, Pack 1's economic model for comparison.

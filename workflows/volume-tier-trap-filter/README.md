@@ -4,7 +4,7 @@ slug: volume-tier-trap-filter
 name: Volume-Tier Trap Filter Workflow
 type: workflow
 summary: Scan active Polymarket negRisk events, assign a dollar-volume tier (flagship / mid / tail) per event, depth-walk only allowed-tier events, and surface only tier-allowed real signals.
-category: workflows/predictions
+category: workflows/market-data
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -115,11 +115,11 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/volume-tier-trap-filter/references/volume-tier-trap-filter@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 2).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-basket-arbitrage.md` (bundle strategy, Layer 2).
 - Companion recipe: `recipes/predictions/recipe-volume-tier-trap-filter.md`.
 - Underlying empirical finding: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge) `MICROSTRUCTURE.md` "Volume-weighted re-analysis" section and `scripts/volume_weighted_trap_rate.py`. 500-event scan, 19/500 flagged. Count-based trap rate 63.2%, dollar-weighted trap rate 0.012%, World Cup `real` event carried 95.9% of $1.15B flagged dollar volume.
 
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/market-data/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)

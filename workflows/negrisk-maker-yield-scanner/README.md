@@ -4,7 +4,7 @@ slug: negrisk-maker-yield-scanner
 name: NegRisk Maker Yield Scanner Workflow
 type: workflow
 summary: Scan active Polymarket negRisk event constituents, depth-walk each on both sides to compute quoted bid-ask half-spread, and surface only constituents passing the principled mean-price + spread-fraction eligibility filter for maker quoting.
-category: workflows/predictions
+category: workflows/market-data
 status: experimental
 owner: harrywinter06-code
 repo: https://github.com/askgina/awesome-gina
@@ -120,11 +120,11 @@ flowchart TD
 ## Evidence
 
 - Source artifact: `workflows/negrisk-maker-yield-scanner/references/negrisk-maker-yield-scanner@latest.ts`.
-- Companion strategy: `strategies/predictions/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy, Layer 1).
+- Companion strategy: `strategies/trading/strategy-polymarket-negrisk-maker-yield.md` (bundle strategy, Layer 1).
 - Companion recipe: `recipes/predictions/recipe-negrisk-maker-yield-scanner.md`.
 - Underlying methodology: [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), `WORLD_CUP_MM.md` (port baseline), `src/polymarket_edge/polymarket_mm_sim.py` (analytic core), `REDTEAM.md` §8a (walk-back log).
 
 ## Backlinks
 
 - [Pack README](../../README.md)
-- Category: `workflows/predictions/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
+- Category: `workflows/market-data/` (resolves to `docs/categories/workflows.md` when merged into `awesome-gina`)
