@@ -275,3 +275,13 @@ I built this with a lot of LLM help, and I'd rather say so plainly. I drove the 
 The methodology underneath it (the depth-aware basket walk, the count-vs-dollar reframe, the walk-forward validation, the maker-yield projection across adverse-selection scenarios) comes from [polymarket-edge](https://github.com/harrywinter06-code/polymarket-edge), a separate repo with the full sensitivity analysis, the red-team log, and 326 CI'd tests.
 
 The strategy docs say `unverified`, and I mean it. If you're looking at this for live trading, read the polymarket-edge `REDTEAM.md` walk-back log and make your own call on which findings still stand.
+
+---
+
+## Author
+
+Built by **[Harry Winter](https://harrywinter06-code.github.io/)**, an Information Management for Business student at UCL in London.
+
+- Project write-up: [harrywinter06-code.github.io/projects/gina-starter-pack/](https://harrywinter06-code.github.io/projects/gina-starter-pack/)
+- Portfolio: [harrywinter06-code.github.io](https://harrywinter06-code.github.io/)
+- LinkedIn: [linkedin.com/in/harry-p-winter](https://www.linkedin.com/in/harry-p-winter)
